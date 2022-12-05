@@ -32,12 +32,12 @@ fn handle_setup_line(stacks: &mut Vec<Vec<char>>, line: &str) {
 /// Handle a "move" line which defines a number of moves from one stack to another one.
 /// Example:
 ///     move 3 from 9 to 4
-fn handle_move_line(stacks: &mut Vec<Vec<char>>, line: &str) {
+fn handle_move_line_part_1(stacks: &mut Vec<Vec<char>>, line: &str) {
     println!("handle_move_line: {}", line);
     let split: Vec<&str> = line.split(' ').collect();
-    let i = split[1].parse::<usize>().unwrap();
-    let from = split[3].parse::<usize>().unwrap() - 1;
-    let to = split[5].parse::<usize>().unwrap() - 1;
+    let i: usize = split[1].parse::<usize>().unwrap();
+    let from: usize = split[3].parse::<usize>().unwrap() - 1;
+    let to: usize = split[5].parse::<usize>().unwrap() - 1;
 
     (0..i).for_each(|_| match stacks.get_mut(from).unwrap().pop() {
         Some(cargo) => stacks.get_mut(to).unwrap().push(cargo),
@@ -47,11 +47,26 @@ fn handle_move_line(stacks: &mut Vec<Vec<char>>, line: &str) {
     print_stacks(stacks);
 }
 
+/// Handle a "move" line which defines a number of moves from one stack to another one.
+/// In this version, moving multiple items should move them as a single block instead of LIFO.
+fn handle_move_line_part_2(stacks: &mut Vec<Vec<char>>, line: &str) {
+    println!("handle_move_line: {}", line);
+    let split: Vec<&str> = line.split(' ').collect();
+    let i: usize = split[1].parse::<usize>().unwrap();
+    let from: usize = split[3].parse::<usize>().unwrap() - 1;
+    let to: usize = split[5].parse::<usize>().unwrap() - 1;
+
+    let from_stack: &mut Vec<char> = stacks.get_mut(from).unwrap();
+    let mut cargo: Vec<char> = from_stack.split_off(from_stack.len() - i);
+    stacks.get_mut(to).unwrap().append(&mut cargo);
+
+    print_stacks(stacks);
+}
+
 /// The expedition can depart as soon as the final supplies have been unloaded from the ships. Supplies are stored in stacks of marked crates, but because the needed supplies are buried under many other crates, the crates need to be rearranged.
 ///
 /// After the rearrangement procedure completes, what crate ends up on top of each stack?
-fn part_1() {
-    // Set up empty stacks
+fn main() {
     let mut stacks: Vec<Vec<char>> = Vec::new();
     (0..9).for_each(|_| stacks.push(Vec::new()));
     print_stacks(&stacks);
@@ -61,14 +76,11 @@ fn part_1() {
             if line.len() > 0 {
                 match line.chars().nth(0).unwrap() {
                     '[' => handle_setup_line(&mut stacks, line),
-                    'm' => handle_move_line(&mut stacks, line),
+                    // 'm' => handle_move_line_part_1(&mut stacks, line),
+                    'm' => handle_move_line_part_2(&mut stacks, line),
                     _ => print_stacks(&stacks),
                 }
             }
         });
     }
-}
-
-fn main() {
-    part_1()
 }
