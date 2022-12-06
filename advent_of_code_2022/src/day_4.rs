@@ -8,6 +8,7 @@ use std::fs;
 /// in need of reconsideration. In this example, there are 2 such pairs.
 ///
 /// In how many assignment pairs does one range fully contain the other?
+/// Part 2: In how many assignment pairs do the ranges overlap?
 fn main() {
     let Ok(contents) = fs::read_to_string("inputs/day_4/input") else { return };
 
@@ -20,14 +21,16 @@ fn main() {
             .collect();
         println!("{:?}", values);
 
-        let left_contains_right: bool = values[0] <= values[2] && values[1] >= values[3];
-        let right_contains_left: bool = values[0] >= values[2] && values[1] <= values[3];
+        // let left_contains_right: bool = values[0] <= values[2] && values[1] >= values[3];
+        // let right_contains_left: bool = values[0] >= values[2] && values[1] <= values[3];
+        // acc + if left_contains_right || right_contains_left {
+        //     1
+        // } else {
+        //     0
+        // }
 
-        acc + if left_contains_right || right_contains_left {
-            1
-        } else {
-            0
-        }
+        let overlap: bool = values[1] >= values[2] && values[0] <= values[3];
+        acc + if overlap { 1 } else { 0 }
     });
-    println!("Number of subsumptions: {}", result);
+    println!("Number of overlaps: {}", result);
 }
