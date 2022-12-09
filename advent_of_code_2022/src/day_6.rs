@@ -13,17 +13,21 @@ where
 /// How many characters need to be processed before the first start-of-packet marker is detected?
 fn main() {
     if let Ok(contents) = fs::read_to_string("inputs/day_6/input") {
+        let nr_of_distinct_characters = 14; // 4 for part 1, 14 for part 2
         contents.lines().for_each(|line| {
             if line.len() > 0 {
                 for chars in line
                     .char_indices()
                     .into_iter()
                     .collect::<Vec<(usize, char)>>()
-                    .windows(4)
+                    .windows(nr_of_distinct_characters)
                 {
                     if no_duplicates(chars.iter().map(|(_, c)| c)) {
                         println!("{:?}", chars);
-                        println!("Nr of characters to be processed: {}", chars[3].0 + 1);
+                        println!(
+                            "Nr of characters to be processed: {}",
+                            chars[nr_of_distinct_characters - 1].0 + 1
+                        );
                         return;
                     }
                 }
