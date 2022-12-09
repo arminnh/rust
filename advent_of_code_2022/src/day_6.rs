@@ -6,7 +6,7 @@ where
     T::Item: Eq + Hash,
 {
     let mut unique = HashSet::new();
-    // HashShet.insert returns whether the value was newly inserted.
+    // HashSet.insert returns whether the value was newly inserted.
     iter.into_iter().all(move |x| unique.insert(x))
 }
 
