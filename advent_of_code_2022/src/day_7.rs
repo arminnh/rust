@@ -113,9 +113,8 @@ fn collect_dirs(dir: &Rc<RefCell<Dir>>, max_size: u32) -> (u32, Vec<(String, u32
     (cumulative_size, subdirs_with_size)
 }
 
-/// Find all of the directories with a total size of at most 100000.
-/// What is the sum of the total sizes of those directories?
-fn part_1(lines: &mut Lines) -> u32 {
+/// Process input and return root of directory tree
+fn process_input(lines: &mut Lines) -> Rc<RefCell<Dir>> {
     let root: Rc<RefCell<Dir>> = Rc::new(RefCell::new(Dir::new("/", None)));
     let mut wd: Rc<RefCell<Dir>> = Rc::clone(&root);
 
@@ -130,7 +129,14 @@ fn part_1(lines: &mut Lines) -> u32 {
             _ => println!("Unsupported input: {:?}", line),
         }
     }
-    root.borrow().print(0);
+    // root.borrow().print(0);
+    root
+}
+
+/// Find all of the directories with a total size of at most 100000.
+/// What is the sum of the total sizes of those directories?
+fn part_1(lines: &mut Lines) -> u32 {
+    let root: Rc<RefCell<Dir>> = process_input(lines);
     let max_size = 100_000;
     let (_, dirs): (u32, Vec<(String, u32)>) = collect_dirs(&root, max_size);
     println!("{:?}", dirs);
@@ -139,15 +145,33 @@ fn part_1(lines: &mut Lines) -> u32 {
     sum
 }
 
-fn part_2(lines: Lines) {
-    println!("Part 2");
+/// Find the smallest directory that, if deleted, would free up enough space on the filesystem to
+/// run the update. What is the total size of that directory?
+fn part_2(lines: &mut Lines) -> u32 {
+    let total_disk_space = 70_000_000;
+    let target_free_space = 30_000_000;
+
+    let root: Rc<RefCell<Dir>> = process_input(lines);
+    let (used_space, mut dirs): (u32, Vec<(String, u32)>) = collect_dirs(&root, target_free_space);
+    println!("{:?}", used_space);
+    println!("{:?}", dirs);
+    let free_space = total_disk_space - used_space;
+
+    dirs.sort_by(|a, b| a.1.cmp(&b.1));
+    let size = dirs
+        .iter()
+        .find(|(_, size)| size > &(target_free_space - free_space))
+        .unwrap()
+        .1;
+    println!("{:?}", size);
+    size
 }
 
 /// Day 7: No Space Left On Device
 fn main() {
     if let Ok(contents) = fs::read_to_string("inputs/day_7") {
         part_1(&mut contents.lines());
-        part_2(contents.lines());
+        part_2(&mut contents.lines());
     }
 }
 
@@ -155,37 +179,37 @@ fn main() {
 mod tests {
     use super::*;
 
+    const INPUT: &str = "$ cd /
+$ ls
+dir a
+14848514 b.txt
+8504156 c.dat
+dir d
+$ cd a
+$ ls
+dir e
+29116 f
+2557 g
+62596 h.lst
+$ cd e
+$ ls
+584 i
+$ cd ..
+$ cd ..
+$ cd d
+$ ls
+4060174 j
+8033020 d.log
+5626152 d.ext
+7214296 k";
+
     #[test]
     fn test_part_1() {
-        let input = "$ cd /
-        $ ls
-        dir a
-        14848514 b.txt
-        8504156 c.dat
-        dir d
-        $ cd a
-        $ ls
-        dir e
-        29116 f
-        2557 g
-        62596 h.lst
-        $ cd e
-        $ ls
-        584 i
-        $ cd ..
-        $ cd ..
-        $ cd d
-        $ ls
-        4060174 j
-        8033020 d.log
-        5626152 d.ext
-        7214296 k";
-        assert_eq!(part_1(&mut input.lines()), 95437)
+        assert_eq!(part_1(&mut INPUT.lines()), 95437)
     }
 
     #[test]
     fn test_part_2() {
-        let input = "...";
-        assert_eq!(part_2(input.lines()), ())
+        assert_eq!(part_2(&mut INPUT.lines()), 24933642)
     }
 }
