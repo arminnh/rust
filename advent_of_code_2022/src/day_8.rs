@@ -56,9 +56,56 @@ fn part_1(grid: &Vec<Vec<u32>>) -> u32 {
     })
 }
 
+/// A tree's scenic score is found by multiplying together its viewing distance in each of the four directions.
+fn scenic_score(grid: &Vec<Vec<u32>>, i: usize, j: usize, size: usize) -> u32 {
+    let height: u32 = grid[i][j];
+    let mut view_dist: [u32; 4] = [0, 0, 0, 0];
+
+    // up
+    for k in 1..i + 1 {
+        view_dist[0] += 1;
+        if height <= grid[i - k][j] {
+            break;
+        }
+    }
+    // down
+    for k in i + 1..size {
+        view_dist[1] += 1;
+        if height <= grid[k][j] {
+            break;
+        }
+    }
+    // left
+    for k in 1..j + 1 {
+        view_dist[2] += 1;
+        if height <= grid[i][j - k] {
+            break;
+        }
+    }
+    // right
+    for k in j + 1..size {
+        view_dist[3] += 1;
+        if height <= grid[i][k] {
+            break;
+        }
+    }
+
+    view_dist[0] * view_dist[1] * view_dist[2] * view_dist[3]
+}
+
+/// Consider each tree on your map. What is the highest scenic score possible for any tree?
 fn part_2(grid: &Vec<Vec<u32>>) -> u32 {
-    println!("Part 2");
-    0
+    let mut max: u32 = 0;
+    let size: usize = grid.len();
+
+    for i in 1..size - 1 {
+        for j in 1..size - 1 {
+            let score: u32 = scenic_score(grid, i, j, size);
+            max = std::cmp::max(max, score);
+        }
+    }
+
+    max
 }
 
 fn lines_to_grid(lines: Lines) -> Vec<Vec<u32>> {
@@ -79,7 +126,7 @@ fn main() {
     if let Ok(contents) = fs::read_to_string("inputs/day_8") {
         let grid = lines_to_grid(contents.lines());
         println!("{}", part_1(&grid));
-        part_2(&grid);
+        println!("{}", part_2(&grid));
     }
 }
 
@@ -99,9 +146,9 @@ mod tests {
         assert_eq!(part_1(&grid), 21)
     }
 
-    //     #[test]
-    //     fn test_part_2() {
-    //         let input = "...";
-    //         assert_eq!(part_2(input.lines()), ())
-    //     }
+    #[test]
+    fn test_part_2() {
+        let grid = lines_to_grid(INPUT.lines());
+        assert_eq!(part_2(&grid), 8)
+    }
 }
