@@ -24,9 +24,11 @@ fn move_tail(head: &(i32, i32), tail: &(i32, i32)) -> (i32, i32) {
     {
         *tail
     } else if head.0 == tail.0 {
-        (tail.0, tail.1 + if head.1 > tail.1 { 1 } else { -1 })
+        let offset = if head.1 > tail.1 { 1 } else { -1 };
+        (tail.0, tail.1 + offset)
     } else if head.1 == tail.1 {
-        (tail.0 + if head.0 > tail.0 { 1 } else { -1 }, tail.1)
+        let offset = if head.0 > tail.0 { 1 } else { -1 };
+        (tail.0 + offset, tail.1)
     } else {
         (
             tail.0 + if head.0 > tail.0 { 1 } else { -1 },
@@ -59,9 +61,28 @@ fn part_1(lines: Lines) -> usize {
     visited.len()
 }
 
-fn part_2(lines: Lines) -> i32 {
-    println!("Part 2");
-    0
+/// Simulate your complete series of motions on a larger rope with ten knots.
+/// How many positions does the tail of the rope visit at least once?
+fn part_2(lines: Lines) -> usize {
+    let mut snake: Vec<(i32, i32)> = vec![(0, 0); 10];
+    let mut visited: HashSet<(i32, i32)> = HashSet::new();
+
+    lines.for_each(
+        |line| match line.split_whitespace().collect::<Vec<&str>>()[..] {
+            [direction, amount] => {
+                for _ in 0..amount.parse().unwrap() {
+                    snake[0] = move_head(snake[0], direction);
+                    for i in 1..snake.len() {
+                        snake[i] = move_tail(&snake[i - 1], &snake[i]);
+                    }
+                    visited.insert(snake[snake.len() - 1]);
+                }
+            }
+            _ => panic!("Unsupported input: {:?}", line),
+        },
+    );
+
+    visited.len()
 }
 
 /// Day 9: Rope Bridge
@@ -90,9 +111,21 @@ R 2";
         assert_eq!(part_1(INPUT.lines()), 13)
     }
 
-    // #[test]
-    // fn test_part_2() {
-    //     let input = "...";
-    //     assert_eq!(part_2(input.lines()), ())
-    // }
+    #[test]
+    fn test_part_2() {
+        assert_eq!(part_2(INPUT.lines()), 1)
+    }
+
+    #[test]
+    fn test_part_2_larger() {
+        let input = "R 5
+    U 8
+    L 8
+    D 3
+    R 17
+    D 10
+    L 25
+    U 20";
+        assert_eq!(part_2(input.lines()), 36)
+    }
 }
