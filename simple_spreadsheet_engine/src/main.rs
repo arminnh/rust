@@ -12,22 +12,24 @@ impl NumberOrCellPos {
             return Some(NumberOrCellPos::Number(number));
         }
 
-        let mut row: u32 = 1;
-        let mut col: u32 = 1;
-        for c in input.chars() {
-            match c {
-                'A'..='Z' => row += c as u32 - 'A' as u32,
-                'a'..='z' => row += c as u32 - 'a' as u32,
-                _ => match c.to_digit(10) {
-                    Some(digit) => col += digit,
-                    None => {
-                        return None;
-                    }
-                },
+        // Split on first digit, calculate row from chars before first digit, and column from the digits.
+        // TODO: validate and split with regex instead https://crates.io/crates/regex
+        if let Some(i) = input.find(|c: char| c.is_digit(10)) {
+            let row: u32 = input[..i].chars().fold(1, |acc, c| {
+                acc + match c {
+                    'A'..='Z' => c as u32 - 'A' as u32,
+                    'a'..='z' => c as u32 - 'a' as u32,
+                    _ => 0,
+                }
+            });
+            if let Ok(column) = input[i..].parse() {
+                return Some(NumberOrCellPos::CellPos(CellPos::new(row, column)));
+            } else {
+                return None;
             }
         }
 
-        Some(NumberOrCellPos::CellPos(CellPos::new(row, col)))
+        None
     }
 }
 
@@ -66,20 +68,36 @@ struct Formula {
 
 impl Formula {
     fn from(input: &str) -> Option<Self> {
-        match input.split("*").collect::<Vec<&str>>()[..] {
-            [lhs, rhs] => match (
-                NumberOrCellPos::from(lhs.trim()),
-                NumberOrCellPos::from(rhs.trim()),
-            ) {
-                (Some(left), Some(right)) => Some(Formula {
-                    operator: Operator::ArithmeticOperator(ArithmeticOperator::Addition),
-                    left,
-                    right,
-                }),
+        let ops = vec![
+            ("**", ArithmeticOperator::Exponentiation),
+            ("*", ArithmeticOperator::Multiplication),
+            ("/", ArithmeticOperator::Division),
+            ("+", ArithmeticOperator::Addition),
+            ("-", ArithmeticOperator::Subtraction),
+        ];
+
+        for op in ops {
+            let formula = match input.split(op.0).collect::<Vec<&str>>()[..] {
+                [lhs, rhs] => match (
+                    NumberOrCellPos::from(lhs.trim()),
+                    NumberOrCellPos::from(rhs.trim()),
+                ) {
+                    (Some(left), Some(right)) => Some(Formula {
+                        operator: Operator::ArithmeticOperator(op.1),
+                        left,
+                        right,
+                    }),
+                    _ => None,
+                },
                 _ => None,
-            },
-            _ => None,
+            };
+
+            if let Some(_) = &formula {
+                return formula;
+            }
         }
+
+        None
     }
 }
 
