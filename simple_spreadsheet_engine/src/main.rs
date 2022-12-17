@@ -1,32 +1,111 @@
+use std::fmt;
+
 #[derive(Debug)]
-enum NumberOrCellRef {
+enum NumberOrCellPos {
     Number(f64),
-    CellRef(Box<Cell>),
+    CellPos(CellPos),
+}
+
+impl NumberOrCellPos {
+    fn from(input: &str) -> Option<Self> {
+        if let Ok(number) = input.parse::<f64>() {
+            return Some(NumberOrCellPos::Number(number));
+        }
+
+        let mut row: u32 = 1;
+        let mut col: u32 = 1;
+        for c in input.chars() {
+            match c {
+                'A'..='Z' => row += c as u32 - 'A' as u32,
+                'a'..='z' => row += c as u32 - 'a' as u32,
+                _ => match c.to_digit(10) {
+                    Some(digit) => col += digit,
+                    None => {
+                        return None;
+                    }
+                },
+            }
+        }
+
+        Some(NumberOrCellPos::CellPos(CellPos::new(row, col)))
+    }
 }
 
 #[derive(Debug)]
-enum MathExpression {
-    Addition(NumberOrCellRef, NumberOrCellRef),
-    Division(NumberOrCellRef, NumberOrCellRef),
-    Multiplication(NumberOrCellRef, NumberOrCellRef),
-    Subtraction(NumberOrCellRef, NumberOrCellRef),
+enum ArithmeticOperator {
+    Addition,       // A + B
+    Division,       // A / B
+    Exponentiation, // A ** B
+    Multiplication, // A * B
+    Subtraction,    // A - B
+}
+
+#[derive(Debug)]
+enum ComparisonOperator {
+    Equal,
+    GreaterThan,
+    GreaterThanOrEqual,
+    LessThan,
+    LessThanOrEqual,
+    NotEqual,
+}
+
+#[derive(Debug)]
+enum Operator {
+    ArithmeticOperator(ArithmeticOperator),
+    ComparisonOperator(ComparisonOperator),
+    TextConcatenationOperator,
+}
+
+#[derive(Debug)]
+struct Formula {
+    operator: Operator,
+    left: NumberOrCellPos,
+    right: NumberOrCellPos,
+}
+
+impl Formula {
+    fn from(input: &str) -> Option<Self> {
+        match input.split("*").collect::<Vec<&str>>()[..] {
+            [lhs, rhs] => match (
+                NumberOrCellPos::from(lhs.trim()),
+                NumberOrCellPos::from(rhs.trim()),
+            ) {
+                (Some(left), Some(right)) => Some(Formula {
+                    operator: Operator::ArithmeticOperator(ArithmeticOperator::Addition),
+                    left,
+                    right,
+                }),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct CellPos {
+    row: u32,
+    col: u32,
+}
+
+impl CellPos {
+    fn new(row: u32, col: u32) -> Self {
+        CellPos { row, col }
+    }
 }
 
 #[derive(Debug)]
 struct CellRange {
-    start_row: u64,
-    end_row: u64,
-    start_column: u64,
-    end_column: u64,
+    start_cell: CellPos,
+    end_cell: CellPos,
 }
 
 impl CellRange {
-    fn new(start_r: u64, end_r: u64, start_c: u64, end_c: u64) -> Self {
+    fn new(start_row: u32, start_col: u32, end_row: u32, end_col: u32) -> Self {
         CellRange {
-            start_row: start_r,
-            end_row: end_r,
-            start_column: start_c,
-            end_column: end_c,
+            start_cell: CellPos::new(start_row, start_col),
+            end_cell: CellPos::new(end_row, end_col),
         }
     }
 }
@@ -34,9 +113,19 @@ impl CellRange {
 #[derive(Debug)]
 enum Function {
     AVG(CellRange),
+    COUNT(CellRange),
+    MAX(CellRange),
     MEDIAN(CellRange),
+    MIN(CellRange),
     STDEV(CellRange),
     SUM(CellRange),
+}
+
+impl Function {
+    fn from(input: &str) -> Option<Self> {
+        println!("PARSING Function {}", input);
+        None
+    }
 }
 
 #[derive(Debug)]
@@ -50,22 +139,18 @@ enum Clone {
 enum Expression {
     Clone(Clone),
     Function(Function),
-    MathExpression(MathExpression),
+    Formula(Formula),
 }
 
 impl Expression {
-    fn parse_function(input: &str) -> Option<Self> {
-        // Some(Expression::Function(Function::AVG(CellRange::new(
-        //     1, 2, 3, 4,
-        // ))))
+    fn from(input: &str) -> Option<Self> {
+        if let Some(fun) = Function::from(input) {
+            return Some(Expression::Function(fun));
+        }
+        if let Some(formula) = Formula::from(input) {
+            return Some(Expression::Formula(formula));
+        }
         None
-    }
-
-    fn parse_math(input: &str) -> Option<Self> {
-        Some(Expression::MathExpression(MathExpression::Addition(
-            NumberOrCellRef::Number(1.0),
-            NumberOrCellRef::Number(2.0),
-        )))
     }
 }
 
@@ -87,17 +172,10 @@ impl From<&str> for Cell {
                 '<' => Cell::Expression(Expression::Clone(Clone::Left)),
                 '>' => Cell::Expression(Expression::Clone(Clone::Right)),
                 '=' => {
-                    // First try to parse function expression
-                    if let Some(fun) = Expression::parse_function(input) {
-                        Cell::Expression(fun)
+                    if let Some(expression) = Expression::from(&trimmed[1..]) {
+                        Cell::Expression(expression)
                     } else {
-                        // Alternatively try to parse math expression
-                        if let Some(math) = Expression::parse_math(input) {
-                            Cell::Expression(math)
-                        } else {
-                            // If neither could be parsed, return error
-                            Cell::Error
-                        }
+                        Cell::Error
                     }
                 }
                 _ => {
@@ -127,12 +205,25 @@ impl Sheet {
     }
 }
 
+impl fmt::Display for Sheet {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let out: Vec<String> = self
+            .content
+            .iter()
+            .enumerate()
+            .map(|(i, row)| format!("{}: {:?}", i, row))
+            .collect();
+
+        write!(f, "{}", out.join("\n"))
+    }
+}
+
 fn parse_input(input: &str) -> Sheet {
     let mut sheet = Sheet::new();
     input.lines().for_each(|line| {
         let mut row = vec![];
-        line.split(',').for_each(|column| {
-            row.push(Cell::from(column));
+        line.split(',').for_each(|col| {
+            row.push(Cell::from(col));
         });
         sheet.content.push(row);
     });
@@ -142,7 +233,7 @@ fn parse_input(input: &str) -> Sheet {
 fn run(input: &str) -> &str {
     println!("{}\n", input);
     let sheet = parse_input(input);
-    println!("{:?}", sheet);
+    print!("{}", sheet);
 
     ""
 }
