@@ -12,21 +12,8 @@ impl NumberOrCellPos {
             return Some(NumberOrCellPos::Number(number));
         }
 
-        // Split on first digit, calculate row from chars before first digit, and column from the digits.
-        // TODO: validate and split with regex instead https://crates.io/crates/regex
-        if let Some(i) = input.find(|c: char| c.is_digit(10)) {
-            let row: u32 = input[..i].chars().fold(1, |acc, c| {
-                acc + match c {
-                    'A'..='Z' => c as u32 - 'A' as u32,
-                    'a'..='z' => c as u32 - 'a' as u32,
-                    _ => 0,
-                }
-            });
-            if let Ok(column) = input[i..].parse() {
-                return Some(NumberOrCellPos::CellPos(CellPos::new(row, column)));
-            } else {
-                return None;
-            }
+        if let Some(pos) = CellPos::from(input) {
+            return Some(NumberOrCellPos::CellPos(pos));
         }
 
         None
@@ -111,6 +98,29 @@ impl CellPos {
     fn new(row: u32, col: u32) -> Self {
         CellPos { row, col }
     }
+
+    fn from(input: &str) -> Option<Self> {
+        // Split on first digit, calculate row from chars before first digit, and column from the digits.
+        // TODO: validate and split with regex instead https://crates.io/crates/regex
+        match input.find(|c: char| c.is_digit(10)) {
+            Some(i) => {
+                if let Ok(column) = input[i..].parse::<u32>() {
+                    let row: u32 = input[..i].chars().fold(1, |acc, c| {
+                        acc + match c {
+                            'A'..='Z' => c as u32 - 'A' as u32,
+                            'a'..='z' => c as u32 - 'a' as u32,
+                            _ => 0,
+                        }
+                    });
+
+                    Some(CellPos::new(row, column))
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -120,6 +130,19 @@ struct CellRange {
 }
 
 impl CellRange {
+    fn from(input: &str) -> Option<Self> {
+        match input.split(':').collect::<Vec<&str>>()[..] {
+            [lhs, rhs] => match (CellPos::from(lhs), CellPos::from(rhs)) {
+                (Some(start_cell), Some(end_cell)) => Some(CellRange {
+                    start_cell,
+                    end_cell,
+                }),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+
     fn new(start_row: u32, start_col: u32, end_row: u32, end_col: u32) -> Self {
         CellRange {
             start_cell: CellPos::new(start_row, start_col),
@@ -140,9 +163,30 @@ enum Function {
 }
 
 impl Function {
+    fn parse_name(input: &str) -> Option<fn(CellRange) -> Function> {
+        match input {
+            "AVG" => Some(Function::AVG),
+            "COUNT" => Some(Function::COUNT),
+            "MAX" => Some(Function::MAX),
+            "MEDIAN" => Some(Function::MEDIAN),
+            "MIN" => Some(Function::MIN),
+            "STDEV" => Some(Function::STDEV),
+            "SUM" => Some(Function::SUM),
+            _ => None,
+        }
+    }
+
     fn from(input: &str) -> Option<Self> {
-        println!("PARSING Function {}", input);
-        None
+        match input.split(|c| c == '(' || c == ')').collect::<Vec<&str>>()[..] {
+            [function_name, argument, ""] => match (
+                Function::parse_name(function_name.trim()),
+                CellRange::from(argument.trim()),
+            ) {
+                (Some(function), Some(cell_range)) => Some(function(cell_range)),
+                _ => None,
+            },
+            _ => None,
+        }
     }
 }
 
@@ -251,7 +295,7 @@ fn parse_input(input: &str) -> Sheet {
 fn run(input: &str) -> &str {
     println!("{}\n", input);
     let sheet = parse_input(input);
-    print!("{}", sheet);
+    print!("{}\n\n", sheet);
 
     ""
 }
