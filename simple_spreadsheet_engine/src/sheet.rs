@@ -14,7 +14,7 @@ pub struct ProcessedSheet {
 
 impl Sheet {
     /// Creates a Sheet with content (2D array of Cells) from a str.
-    pub fn parse_input(input: &str) -> Sheet {
+    pub fn parse_input(input: String) -> Sheet {
         let rows = input
             .lines()
             .map(|line| line.split(',').map(|col| Cell::from(col)).collect())
