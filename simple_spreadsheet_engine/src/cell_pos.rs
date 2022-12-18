@@ -1,11 +1,11 @@
 #[derive(Debug, PartialEq)]
 pub struct CellPos {
-    row: u32,
-    col: u32,
+    pub row: usize,
+    pub col: usize,
 }
 
 impl CellPos {
-    pub fn new(row: u32, col: u32) -> Self {
+    pub fn new(row: usize, col: usize) -> Self {
         CellPos { row, col }
     }
 }
@@ -17,13 +17,13 @@ impl TryFrom<&str> for CellPos {
         // TODO: validate and split with regex instead -- https://crates.io/crates/regex
         match input.find(|c: char| c.is_digit(10)) {
             Some(i) => {
-                if let Ok(column) = input[i..].parse::<u32>() {
-                    let mut row: u32 = 0;
+                if let Ok(column) = input[i..].parse::<usize>() {
+                    let mut row: usize = 0;
                     for c in input[..i].chars() {
                         row *= 26;
                         row += match c {
-                            'A'..='Z' => c as u32 - 'A' as u32 + 1,
-                            'a'..='z' => c as u32 - 'a' as u32 + 1,
+                            'A'..='Z' => c as usize - 'A' as usize + 1,
+                            'a'..='z' => c as usize - 'a' as usize + 1,
                             _ => {
                                 return Err(format!("Unexpected character '{}'.", c));
                             }

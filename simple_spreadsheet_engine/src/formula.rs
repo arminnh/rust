@@ -1,4 +1,4 @@
-use crate::number_or_cell_pos::NumberOrCellPos;
+use crate::{number_or_cell_pos::NumberOrCellPos, sheet::Sheet};
 
 // TODO: Add support for % operator. E.g '=A * 10%'
 #[derive(Debug, PartialEq)]
@@ -43,6 +43,22 @@ impl Formula {
             operator,
             left,
             right,
+        }
+    }
+
+    pub fn process(&self, sheet: &Sheet) -> String {
+        if let (Some(lhs), Some(rhs)) = (self.left.resolve(sheet), self.right.resolve(sheet)) {
+            match &self.operator {
+                Operator::ArithmeticOperator(op) => match op {
+                    ArithmeticOperator::Addition => (lhs + rhs).to_string(),
+                    ArithmeticOperator::Division => (lhs / rhs).to_string(),
+                    ArithmeticOperator::Exponentiation => (f64::powf(lhs, rhs)).to_string(),
+                    ArithmeticOperator::Multiplication => (lhs * rhs).to_string(),
+                    ArithmeticOperator::Subtraction => (lhs - rhs).to_string(),
+                },
+            }
+        } else {
+            todo!()
         }
     }
 }

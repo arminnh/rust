@@ -1,8 +1,6 @@
-use std::fmt::format;
-
 use crate::cell_range::CellRange;
 
-// TODO: all multiple argument support
+// TODO: all multiple argument support -- probably better through struct of enum FunctionName and vector of args
 // TODO: add all the functions!
 #[derive(Debug, PartialEq)]
 pub enum Function {
@@ -27,6 +25,10 @@ impl Function {
             "SUM" => Some(Function::SUM),
             _ => None,
         }
+    }
+
+    pub fn process(&self, sheet: &crate::sheet::Sheet) -> String {
+        todo!()
     }
 }
 

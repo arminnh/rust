@@ -1,4 +1,4 @@
-use crate::expression::Expression;
+use crate::{expression::Expression, sheet::Sheet};
 
 #[derive(Debug, PartialEq)]
 pub enum Cell {
@@ -7,6 +7,20 @@ pub enum Cell {
     Expression(Expression),
     Number(f64),
     Text(String),
+}
+
+impl Cell {
+    /// Process/resolve the Cell so it can be displayed. If expression, resolve the expression, otherwise simply
+    /// return the cell because the content can be displayed directly.
+    pub fn process(&self, sheet: &Sheet) -> String {
+        match self {
+            Cell::Empty => "".to_string(),
+            Cell::Error(e) => "#ERROR#: ".to_string() + e,
+            Cell::Expression(e) => e.process(sheet),
+            Cell::Number(n) => n.to_string(),
+            Cell::Text(t) => t.clone(),
+        }
+    }
 }
 
 impl From<&str> for Cell {

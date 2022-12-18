@@ -7,7 +7,7 @@ pub struct CellRange {
 }
 
 impl CellRange {
-    pub fn new(start_row: u32, start_col: u32, end_row: u32, end_col: u32) -> Self {
+    pub fn new(start_row: usize, start_col: usize, end_row: usize, end_col: usize) -> Self {
         CellRange {
             start_cell: CellPos::new(start_row, start_col),
             end_cell: CellPos::new(end_row, end_col),

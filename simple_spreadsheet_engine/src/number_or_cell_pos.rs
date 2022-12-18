@@ -1,10 +1,22 @@
-use crate::cell_pos::CellPos;
+use crate::{cell_pos::CellPos, sheet::Sheet};
 
 #[derive(Debug, PartialEq)]
 pub enum NumberOrCellPos {
     // TODO: support generic number types -- https://crates.io/crates/num
     Number(f64),
     CellPos(CellPos),
+}
+
+impl NumberOrCellPos {
+    pub fn resolve(&self, sheet: &Sheet) -> Option<f64> {
+        match self {
+            NumberOrCellPos::Number(n) => Some(*n),
+            NumberOrCellPos::CellPos(pos) => match sheet.content[pos.row - 1][pos.col - 1] {
+                crate::cell::Cell::Number(n) => Some(n),
+                _ => None,
+            },
+        }
+    }
 }
 
 impl TryFrom<&str> for NumberOrCellPos {
