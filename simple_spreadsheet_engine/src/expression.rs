@@ -15,26 +15,33 @@ pub enum Expression {
     Formula(Formula),
 }
 
-// impl TryFrom<char> for Expression {
-//     fn try_from(c: char) -> Result<Self, Self::Error> {
-//         match c {
-//             '^' => Ok(Expression::Clone(Clone::Top)),
-//             '<' => Ok(Expression::Clone(Clone::Left)),
-//             '>' => Ok(Expression::Clone(Clone::Right)),
-//             _ => Err("???")
-//         }
-//     }
-// }
+impl TryFrom<char> for Expression {
+    type Error = &'static str;
 
-impl Expression {
-    pub fn from(input: &str) -> Option<Self> {
-        if let Some(fun) = Function::from(input) {
-            return Some(Expression::Function(fun));
+    fn try_from(c: char) -> Result<Self, Self::Error> {
+        match c {
+            '^' => Ok(Expression::Clone(Clone::Top)),
+            '<' => Ok(Expression::Clone(Clone::Left)),
+            '>' => Ok(Expression::Clone(Clone::Right)),
+            _ => Err("Unsupported expression."),
         }
-        if let Some(formula) = Formula::from(input) {
-            return Some(Expression::Formula(formula));
+    }
+}
+
+impl TryFrom<&str> for Expression {
+    type Error = &'static str;
+
+    fn try_from(input: &str) -> Result<Self, Self::Error> {
+        if input.len() == 1 {
+            return Expression::try_from(input.chars().nth(0).unwrap());
         }
-        None
+        if let Ok(fun) = Function::try_from(input) {
+            return Ok(Expression::Function(fun));
+        }
+        if let Ok(formula) = Formula::try_from(input) {
+            return Ok(Expression::Formula(formula));
+        }
+        Err("Unsupported expression.")
     }
 }
 
@@ -42,15 +49,43 @@ impl Expression {
 mod tests {
     use crate::cell_pos::CellPos;
     use crate::cell_range::CellRange;
-    use crate::expression::Expression;
+    use crate::expression::{Clone, Expression};
     use crate::formula::{ArithmeticOperator, Formula, Operator};
     use crate::function::Function;
     use crate::number_or_cell_pos::NumberOrCellPos;
 
     #[test]
-    fn can_parse_expressions() {
+    fn can_parse_clone_expressions() {
         assert_eq!(
-            Expression::from("A1 + B2").unwrap(),
+            Expression::try_from('^').unwrap(),
+            Expression::Clone(Clone::Top)
+        );
+        assert_eq!(
+            Expression::try_from('<').unwrap(),
+            Expression::Clone(Clone::Left)
+        );
+        assert_eq!(
+            Expression::try_from('>').unwrap(),
+            Expression::Clone(Clone::Right)
+        );
+        assert_eq!(
+            Expression::try_from("^").unwrap(),
+            Expression::Clone(Clone::Top)
+        );
+        assert_eq!(
+            Expression::try_from("<").unwrap(),
+            Expression::Clone(Clone::Left)
+        );
+        assert_eq!(
+            Expression::try_from(">").unwrap(),
+            Expression::Clone(Clone::Right)
+        );
+    }
+
+    #[test]
+    fn can_parse_arithmetic_expressions() {
+        assert_eq!(
+            Expression::try_from("A1 + B2").unwrap(),
             Expression::Formula(Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Addition),
                 NumberOrCellPos::CellPos(CellPos::new(1, 1)),
@@ -59,7 +94,7 @@ mod tests {
         );
 
         assert_eq!(
-            Expression::from("9.60 * 0.8").unwrap(),
+            Expression::try_from("9.60 * 0.8").unwrap(),
             Expression::Formula(Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Multiplication),
                 NumberOrCellPos::Number(9.60),
@@ -68,42 +103,45 @@ mod tests {
         );
 
         assert_eq!(
-            Expression::from("A1 - 1").unwrap(),
+            Expression::try_from("A1 - 1").unwrap(),
             Expression::Formula(Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Subtraction),
                 NumberOrCellPos::CellPos(CellPos::new(1, 1)),
                 NumberOrCellPos::Number(1.0)
             ))
         );
+    }
 
+    #[test]
+    fn can_parse_function_expressions() {
         assert_eq!(
-            Expression::from("AVG(A1:A3)").unwrap(),
+            Expression::try_from("AVG(A1:A3)").unwrap(),
             Expression::Function(Function::AVG(CellRange::new(1, 1, 1, 3)))
         );
 
         assert_eq!(
-            Expression::from("COUNT(B2:B11)").unwrap(),
+            Expression::try_from("COUNT(B2:B11)").unwrap(),
             Expression::Function(Function::COUNT(CellRange::new(2, 2, 2, 11)))
         );
 
         assert_eq!(
-            Expression::from("SUM(D2:D4)").unwrap(),
+            Expression::try_from("SUM(D2:D4)").unwrap(),
             Expression::Function(Function::SUM(CellRange::new(4, 2, 4, 4)))
         );
     }
 
     #[test]
     fn handles_invalid_input() {
-        assert!(Expression::from("").is_none());
-        assert!(Expression::from("^").is_none());
-        assert!(Expression::from("<").is_none());
-        assert!(Expression::from(">").is_none());
-        assert!(Expression::from("=1.23 + 456").is_none());
-        assert!(Expression::from("=SUM(D2:D4)").is_none());
-        assert!(Expression::from("IF(1, 2, 3)").is_none());
-        assert!(Expression::from("LOOKUP(F4, B5:B9, C5:C9)").is_none());
-        assert!(Expression::from("DATE(2015, 5, 20)").is_none());
-        assert!(Expression::from("AVG(?)").is_none());
-        assert!(Expression::from("#ERROR#").is_none());
+        let err = Err("Unsupported expression.");
+        assert_eq!(Expression::try_from(""), err);
+        assert_eq!(Expression::try_from("v"), err);
+        assert_eq!(Expression::try_from('v'), err);
+        assert_eq!(Expression::try_from("=1.23 + 456"), err);
+        assert_eq!(Expression::try_from("=SUM(D2:D4)"), err);
+        assert_eq!(Expression::try_from("IF(1, 2, 3)"), err);
+        assert_eq!(Expression::try_from("LOOKUP(F4, B5:B9, C5:C9)"), err);
+        assert_eq!(Expression::try_from("DATE(2015, 5, 20)"), err);
+        assert_eq!(Expression::try_from("AVG(?)"), err);
+        assert_eq!(Expression::try_from("#ERROR#"), err);
     }
 }

@@ -7,17 +7,19 @@ pub enum NumberOrCellPos {
     CellPos(CellPos),
 }
 
-impl NumberOrCellPos {
-    pub fn from(input: &str) -> Option<Self> {
+impl TryFrom<&str> for NumberOrCellPos {
+    type Error = &'static str;
+
+    fn try_from(input: &str) -> Result<Self, Self::Error> {
         if let Ok(number) = input.parse::<f64>() {
-            return Some(NumberOrCellPos::Number(number));
+            return Ok(NumberOrCellPos::Number(number));
         }
 
-        if let Some(pos) = CellPos::from(input) {
-            return Some(NumberOrCellPos::CellPos(pos));
+        if let Ok(pos) = CellPos::try_from(input) {
+            return Ok(NumberOrCellPos::CellPos(pos));
         }
 
-        None
+        Err("Invalid Number or Cell position.")
     }
 }
 
@@ -28,38 +30,39 @@ mod tests {
     #[test]
     fn can_parse_cell_range() {
         assert_eq!(
-            NumberOrCellPos::from("1").unwrap(),
+            NumberOrCellPos::try_from("1").unwrap(),
             NumberOrCellPos::Number(1.0)
         );
         assert_eq!(
-            NumberOrCellPos::from("-1").unwrap(),
+            NumberOrCellPos::try_from("-1").unwrap(),
             NumberOrCellPos::Number(-1.0)
         );
         assert_eq!(
-            NumberOrCellPos::from("3.141592").unwrap(),
+            NumberOrCellPos::try_from("3.141592").unwrap(),
             NumberOrCellPos::Number(3.141592)
         );
         assert_eq!(
-            NumberOrCellPos::from("A1").unwrap(),
+            NumberOrCellPos::try_from("A1").unwrap(),
             NumberOrCellPos::CellPos(CellPos::new(1, 1))
         );
         assert_eq!(
-            NumberOrCellPos::from("ZA99").unwrap(),
+            NumberOrCellPos::try_from("ZA99").unwrap(),
             NumberOrCellPos::CellPos(CellPos::new(677, 99))
         );
     }
 
     #[test]
     fn handles_invalid_input() {
-        assert!(NumberOrCellPos::from("").is_none());
-        assert!(NumberOrCellPos::from("?").is_none());
-        assert!(NumberOrCellPos::from("=123").is_none());
-        assert!(NumberOrCellPos::from("Z0").is_none());
-        assert!(NumberOrCellPos::from("A1:").is_none());
-        assert!(NumberOrCellPos::from(":A1").is_none());
-        assert!(NumberOrCellPos::from("1A:A1").is_none());
-        assert!(NumberOrCellPos::from("=H8 * Z1").is_none());
-        assert!(NumberOrCellPos::from("=9 - 5.795").is_none());
-        assert!(NumberOrCellPos::from("#ERROR#").is_none());
+        let err = Err("Invalid Number or Cell position.");
+        assert_eq!(NumberOrCellPos::try_from(""), err);
+        assert_eq!(NumberOrCellPos::try_from("?"), err);
+        assert_eq!(NumberOrCellPos::try_from("=123"), err);
+        assert_eq!(NumberOrCellPos::try_from("Z0"), err);
+        assert_eq!(NumberOrCellPos::try_from("A1:"), err);
+        assert_eq!(NumberOrCellPos::try_from(":A1"), err);
+        assert_eq!(NumberOrCellPos::try_from("1A:A1"), err);
+        assert_eq!(NumberOrCellPos::try_from("=H8 * Z1"), err);
+        assert_eq!(NumberOrCellPos::try_from("=9 - 5.795"), err);
+        assert_eq!(NumberOrCellPos::try_from("#ERROR#"), err);
     }
 }

@@ -7,25 +7,34 @@ pub struct CellRange {
 }
 
 impl CellRange {
-    pub fn from(input: &str) -> Option<Self> {
-        // TODO: don't allow invalid ranges
-        // TODO: support absolute reference with $
-        match input.split(':').collect::<Vec<&str>>()[..] {
-            [lhs, rhs] => match (CellPos::from(lhs), CellPos::from(rhs)) {
-                (Some(start_cell), Some(end_cell)) => Some(CellRange {
-                    start_cell,
-                    end_cell,
-                }),
-                _ => None,
-            },
-            _ => None,
-        }
-    }
-
     pub fn new(start_row: u32, start_col: u32, end_row: u32, end_col: u32) -> Self {
         CellRange {
             start_cell: CellPos::new(start_row, start_col),
             end_cell: CellPos::new(end_row, end_col),
+        }
+    }
+}
+
+impl TryFrom<&str> for CellRange {
+    type Error = String;
+
+    fn try_from(input: &str) -> Result<Self, Self::Error> {
+        // TODO: don't allow invalid ranges
+        // TODO: support absolute reference with $
+        match input.split(':').collect::<Vec<&str>>()[..] {
+            [lhs, rhs] => match (CellPos::try_from(lhs), CellPos::try_from(rhs)) {
+                (Ok(start_cell), Ok(end_cell)) => Ok(CellRange {
+                    start_cell,
+                    end_cell,
+                }),
+                (Ok(_), Err(e)) => Err(format!("Right side is not a valid cell range: {}", e)),
+                (Err(e), Ok(_)) => Err(format!("Left side is not a valid cell range: {}", e)),
+                (Err(e1), Err(e2)) => Err(format!(
+                    "Input not a valid cell range: {{ lhs: '{}', rhs: '{}' }}.",
+                    e1, e2
+                )),
+            },
+            _ => Err(format!("Could not find ':' in cell range '{}'.", input)),
         }
     }
 }
@@ -40,31 +49,59 @@ mod tests {
     #[test]
     fn can_parse_cell_range() {
         assert_eq!(
-            CellRange::from("A1:A3").unwrap(),
+            CellRange::try_from("A1:A3").unwrap(),
             CellRange::new(1, 1, 1, 3)
         );
         assert_eq!(
-            CellRange::from("A2:B8").unwrap(),
+            CellRange::try_from("A2:B8").unwrap(),
             CellRange::new(1, 2, 2, 8)
         );
         assert_eq!(
-            CellRange::from("D2:D4").unwrap(),
+            CellRange::try_from("D2:D4").unwrap(),
             CellRange::new(4, 2, 4, 4)
         );
         assert_eq!(
-            CellRange::from("AA999:AAA1000").unwrap(),
+            CellRange::try_from("AA999:AAA1000").unwrap(),
             CellRange::new(27, 999, 703, 1000)
         );
     }
 
     #[test]
     fn handles_invalid_input() {
-        assert!(CellRange::from("").is_none());
-        assert!(CellRange::from("?").is_none());
-        assert!(CellRange::from("A1").is_none());
-        assert!(CellRange::from("A1:").is_none());
-        assert!(CellRange::from(":A1").is_none());
-        assert!(CellRange::from("1A:A1").is_none());
-        assert!(CellRange::from("#ERROR#").is_none());
+        assert_eq!(
+            CellRange::try_from(""),
+            Err("Could not find ':' in cell range ''.".to_string())
+        );
+        assert_eq!(
+            CellRange::try_from("?"),
+            Err("Could not find ':' in cell range '?'.".to_string())
+        );
+        assert_eq!(
+            CellRange::try_from("A1"),
+            Err("Could not find ':' in cell range 'A1'.".to_string())
+        );
+        assert_eq!(
+            CellRange::try_from("#ERROR#"),
+            Err("Could not find ':' in cell range '#ERROR#'.".to_string())
+        );
+        assert_eq!(
+            CellRange::try_from("A1:"),
+            Err("Right side is not a valid cell range: No digit in ''.".to_string())
+        );
+        assert_eq!(
+            CellRange::try_from(":A1"),
+            Err("Left side is not a valid cell range: No digit in ''.".to_string())
+        );
+        assert_eq!(
+            CellRange::try_from("2X:3Y"),
+            Err("Input not a valid cell range: { lhs: 'Could not parse '2X' as column number.', rhs: 'Could not parse '3Y' as column number.' }.".to_string())
+        );
+        assert_eq!(
+            CellRange::try_from("1A:A1"),
+            Err(
+                "Left side is not a valid cell range: Could not parse '1A' as column number."
+                    .to_string()
+            )
+        );
     }
 }

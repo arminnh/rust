@@ -1,9 +1,9 @@
-use crate::expression::{Clone, Expression};
+use crate::expression::Expression;
 
 #[derive(Debug, PartialEq)]
 pub enum Cell {
     Empty,
-    Error,
+    Error(String),
     Expression(Expression),
     Number(f64),
     Text(String),
@@ -14,16 +14,11 @@ impl From<&str> for Cell {
         let trimmed = input.trim();
         if let Some(first_char) = trimmed.chars().nth(0) {
             match first_char {
-                '^' => Cell::Expression(Expression::Clone(Clone::Top)),
-                '<' => Cell::Expression(Expression::Clone(Clone::Left)),
-                '>' => Cell::Expression(Expression::Clone(Clone::Right)),
-                '=' => {
-                    if let Some(expression) = Expression::from(&trimmed[1..]) {
-                        Cell::Expression(expression)
-                    } else {
-                        Cell::Error
-                    }
-                }
+                '^' | '<' | '>' => Cell::Expression(Expression::try_from(first_char).unwrap()),
+                '=' => match Expression::try_from(&trimmed[1..]) {
+                    Ok(expression) => Cell::Expression(expression),
+                    Err(e) => Cell::Error(e.to_string()),
+                },
                 _ => {
                     // First try to parse as number
                     if let Ok(num) = trimmed.parse::<f64>() {
@@ -125,10 +120,10 @@ mod tests {
 
     #[test]
     fn parses_error_cells() {
-        assert_eq!(Cell::from("=nope + 1"), Cell::Error);
-        assert_eq!(Cell::from("=IF(1, 2, 3)"), Cell::Error);
-        assert_eq!(Cell::from("=LOOKUP(F4, B5:B9, C5:C9)"), Cell::Error);
-        assert_eq!(Cell::from("=DATE(2015, 5, 20)"), Cell::Error);
-        assert_eq!(Cell::from("=AVG(?)"), Cell::Error);
+        println!("{:?}", Cell::from("=nope + 1"));
+        println!("{:?}", Cell::from("=IF(1, 2, 3)"));
+        println!("{:?}", Cell::from("=LOOKUP(F4, B5:B9, C5:C9)"));
+        println!("{:?}", Cell::from("=DATE(2015, 5, 20)"));
+        println!("{:?}", Cell::from("=AVG(?)"));
     }
 }
