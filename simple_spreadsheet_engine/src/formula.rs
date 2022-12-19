@@ -50,11 +50,41 @@ impl Formula {
         if let (Some(lhs), Some(rhs)) = (self.left.resolve(sheet), self.right.resolve(sheet)) {
             match &self.operator {
                 Operator::ArithmeticOperator(op) => match op {
-                    ArithmeticOperator::Addition => (lhs + rhs).to_string(),
-                    ArithmeticOperator::Division => (lhs / rhs).to_string(),
-                    ArithmeticOperator::Exponentiation => (f64::powf(lhs, rhs)).to_string(),
-                    ArithmeticOperator::Multiplication => (lhs * rhs).to_string(),
-                    ArithmeticOperator::Subtraction => (lhs - rhs).to_string(),
+                    ArithmeticOperator::Addition => {
+                        println!("..> ={} + {}", self.left, self.right);
+                        println!("... {} + {}", lhs, rhs);
+                        let out = (lhs + rhs).to_string();
+                        println!("... {}\n", out);
+                        out
+                    }
+                    ArithmeticOperator::Division => {
+                        println!("..> ={} / {}", self.left, self.right);
+                        println!("... {} / {}", lhs, rhs);
+                        let out = (lhs / rhs).to_string();
+                        println!("... {}\n", out);
+                        out
+                    }
+                    ArithmeticOperator::Exponentiation => {
+                        println!("..> ={} ** {}", self.left, self.right);
+                        println!("... {} ** {}", lhs, rhs);
+                        let out = (f64::powf(lhs, rhs)).to_string();
+                        println!("... {}\n", out);
+                        out
+                    }
+                    ArithmeticOperator::Multiplication => {
+                        println!("..> ={} * {}", self.left, self.right);
+                        println!("... {} * {}", lhs, rhs);
+                        let out = (lhs * rhs).to_string();
+                        println!("... {}\n", out);
+                        out
+                    }
+                    ArithmeticOperator::Subtraction => {
+                        println!("..> ={} - {}", self.left, self.right);
+                        println!("... {} - {}", lhs, rhs);
+                        let out = (lhs - rhs).to_string();
+                        println!("... {}\n", out);
+                        out
+                    }
                 },
             }
         } else {
@@ -122,8 +152,8 @@ mod tests {
             Formula::try_from("A1 + B2").unwrap(),
             Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Addition),
-                NumberOrCellPos::CellPos(CellPos::new(1, 1)),
-                NumberOrCellPos::CellPos(CellPos::new(2, 2))
+                NumberOrCellPos::CellPos(CellPos::new("A1".to_string(), 1, 1)),
+                NumberOrCellPos::CellPos(CellPos::new("B2".to_string(), 2, 2))
             )
         );
 
@@ -131,7 +161,7 @@ mod tests {
             Formula::try_from("C3 / 0 ").unwrap(),
             Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Division),
-                NumberOrCellPos::CellPos(CellPos::new(3, 3)),
+                NumberOrCellPos::CellPos(CellPos::new("C3".to_string(), 3, 3)),
                 NumberOrCellPos::Number(0.0)
             )
         );
@@ -158,7 +188,7 @@ mod tests {
             Formula::try_from("Z20 ** 3").unwrap(),
             Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Exponentiation),
-                NumberOrCellPos::CellPos(CellPos::new(26, 20)),
+                NumberOrCellPos::CellPos(CellPos::new("Z20".to_string(), 26, 20)),
                 NumberOrCellPos::Number(3.0)
             )
         );
@@ -176,8 +206,8 @@ mod tests {
             Formula::try_from("B2 * C2").unwrap(),
             Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Multiplication),
-                NumberOrCellPos::CellPos(CellPos::new(2, 2)),
-                NumberOrCellPos::CellPos(CellPos::new(3, 2))
+                NumberOrCellPos::CellPos(CellPos::new("B2".to_string(), 2, 2)),
+                NumberOrCellPos::CellPos(CellPos::new("C2".to_string(), 3, 2))
             )
         );
 
@@ -185,7 +215,7 @@ mod tests {
             Formula::try_from("A1 - 1").unwrap(),
             Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Subtraction),
-                NumberOrCellPos::CellPos(CellPos::new(1, 1)),
+                NumberOrCellPos::CellPos(CellPos::new("A1".to_string(), 1, 1)),
                 NumberOrCellPos::Number(1.0)
             )
         );

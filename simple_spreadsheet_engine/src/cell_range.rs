@@ -15,10 +15,11 @@ impl CellRange {
         end_row: usize,
         end_col: usize,
     ) -> Self {
+        let (left_str, right_str) = str.split_once(":").unwrap();
         CellRange {
-            str,
-            start_cell: CellPos::new(start_row, start_col),
-            end_cell: CellPos::new(end_row, end_col),
+            str: str.clone(),
+            start_cell: CellPos::new(left_str.to_string(), start_row, start_col),
+            end_cell: CellPos::new(right_str.to_string(), end_row, end_col),
         }
     }
 

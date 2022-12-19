@@ -105,8 +105,8 @@ mod tests {
             Expression::try_from("A1 + B2").unwrap(),
             Expression::Formula(Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Addition),
-                NumberOrCellPos::CellPos(CellPos::new(1, 1)),
-                NumberOrCellPos::CellPos(CellPos::new(2, 2))
+                NumberOrCellPos::CellPos(CellPos::new("A1".to_string(), 1, 1)),
+                NumberOrCellPos::CellPos(CellPos::new("B2".to_string(), 2, 2))
             ))
         );
 
@@ -123,7 +123,7 @@ mod tests {
             Expression::try_from("A1 - 1").unwrap(),
             Expression::Formula(Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Subtraction),
-                NumberOrCellPos::CellPos(CellPos::new(1, 1)),
+                NumberOrCellPos::CellPos(CellPos::new("A1".to_string(), 1, 1)),
                 NumberOrCellPos::Number(1.0)
             ))
         );

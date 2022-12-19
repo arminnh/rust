@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::{cell_pos::CellPos, sheet::Sheet};
 
 #[derive(Debug, PartialEq)]
@@ -37,6 +39,15 @@ impl TryFrom<&str> for NumberOrCellPos {
     }
 }
 
+impl fmt::Display for NumberOrCellPos {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            NumberOrCellPos::Number(num) => write!(f, "{}", num),
+            NumberOrCellPos::CellPos(pos) => write!(f, "{}", pos.str),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{cell_pos::CellPos, number_or_cell_pos::NumberOrCellPos};
@@ -57,11 +68,11 @@ mod tests {
         );
         assert_eq!(
             NumberOrCellPos::try_from("A1").unwrap(),
-            NumberOrCellPos::CellPos(CellPos::new(1, 1))
+            NumberOrCellPos::CellPos(CellPos::new("A1".to_string(), 1, 1))
         );
         assert_eq!(
             NumberOrCellPos::try_from("ZA99").unwrap(),
-            NumberOrCellPos::CellPos(CellPos::new(677, 99))
+            NumberOrCellPos::CellPos(CellPos::new("ZA99".to_string(), 677, 99))
         );
     }
 

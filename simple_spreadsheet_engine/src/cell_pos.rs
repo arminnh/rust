@@ -1,12 +1,13 @@
 #[derive(Debug, PartialEq)]
 pub struct CellPos {
+    pub str: String,
     pub row: usize,
     pub col: usize,
 }
 
 impl CellPos {
-    pub fn new(row: usize, col: usize) -> Self {
-        CellPos { row, col }
+    pub fn new(str: String, row: usize, col: usize) -> Self {
+        CellPos { str, row, col }
     }
 }
 
@@ -32,7 +33,7 @@ impl TryFrom<&str> for CellPos {
                     if row == 0 || column == 0 {
                         Err(format!("Invalid row '{}' or column '{}'.", row, column))
                     } else {
-                        Ok(CellPos::new(row, column))
+                        Ok(CellPos::new(input.to_string(), row, column))
                     }
                 } else {
                     Err(format!(
@@ -55,29 +56,74 @@ mod tests {
 
     #[test]
     fn can_parse_single_char() {
-        assert_eq!(CellPos::try_from("A1").unwrap(), CellPos::new(1, 1));
-        assert_eq!(CellPos::try_from("a1").unwrap(), CellPos::new(1, 1));
-        assert_eq!(CellPos::try_from("E9").unwrap(), CellPos::new(5, 9));
+        assert_eq!(
+            CellPos::try_from("A1").unwrap(),
+            CellPos::new("A1".to_string(), 1, 1)
+        );
+        assert_eq!(
+            CellPos::try_from("a1").unwrap(),
+            CellPos::new("a1".to_string(), 1, 1)
+        );
+        assert_eq!(
+            CellPos::try_from("E9").unwrap(),
+            CellPos::new("E9".to_string(), 5, 9)
+        );
         assert_eq!(
             CellPos::try_from("C9999999").unwrap(),
-            CellPos::new(3, 9999999)
+            CellPos::new("C9999999".to_string(), 3, 9999999)
         );
-        assert_eq!(CellPos::try_from("Z123").unwrap(), CellPos::new(26, 123));
-        assert_eq!(CellPos::try_from("z99").unwrap(), CellPos::new(26, 99));
+        assert_eq!(
+            CellPos::try_from("Z123").unwrap(),
+            CellPos::new("Z123".to_string(), 26, 123)
+        );
+        assert_eq!(
+            CellPos::try_from("z99").unwrap(),
+            CellPos::new("z99".to_string(), 26, 99)
+        );
     }
 
     #[test]
     fn can_parse_multiple_chars() {
-        assert_eq!(CellPos::try_from("AA1").unwrap(), CellPos::new(27, 1));
-        assert_eq!(CellPos::try_from("AB234").unwrap(), CellPos::new(28, 234));
-        assert_eq!(CellPos::try_from("AZ99").unwrap(), CellPos::new(52, 99));
-        assert_eq!(CellPos::try_from("ZA100").unwrap(), CellPos::new(677, 100));
-        assert_eq!(CellPos::try_from("ZZ2").unwrap(), CellPos::new(702, 2));
-        assert_eq!(CellPos::try_from("AAA1").unwrap(), CellPos::new(703, 1));
-        assert_eq!(CellPos::try_from("AAZ1").unwrap(), CellPos::new(728, 1));
-        assert_eq!(CellPos::try_from("CCC1").unwrap(), CellPos::new(2109, 1));
-        assert_eq!(CellPos::try_from("ZZZ1").unwrap(), CellPos::new(18278, 1));
-        assert_eq!(CellPos::try_from("zzz2").unwrap(), CellPos::new(18278, 2));
+        assert_eq!(
+            CellPos::try_from("AA1").unwrap(),
+            CellPos::new("AA1".to_string(), 27, 1)
+        );
+        assert_eq!(
+            CellPos::try_from("AB234").unwrap(),
+            CellPos::new("AB234".to_string(), 28, 234)
+        );
+        assert_eq!(
+            CellPos::try_from("AZ99").unwrap(),
+            CellPos::new("AZ99".to_string(), 52, 99)
+        );
+        assert_eq!(
+            CellPos::try_from("ZA100").unwrap(),
+            CellPos::new("ZA100".to_string(), 677, 100)
+        );
+        assert_eq!(
+            CellPos::try_from("ZZ2").unwrap(),
+            CellPos::new("ZZ2".to_string(), 702, 2)
+        );
+        assert_eq!(
+            CellPos::try_from("AAA1").unwrap(),
+            CellPos::new("AAA1".to_string(), 703, 1)
+        );
+        assert_eq!(
+            CellPos::try_from("AAZ1").unwrap(),
+            CellPos::new("AAZ1".to_string(), 728, 1)
+        );
+        assert_eq!(
+            CellPos::try_from("CCC1").unwrap(),
+            CellPos::new("CCC1".to_string(), 2109, 1)
+        );
+        assert_eq!(
+            CellPos::try_from("ZZZ1").unwrap(),
+            CellPos::new("ZZZ1".to_string(), 18278, 1)
+        );
+        assert_eq!(
+            CellPos::try_from("zzz2").unwrap(),
+            CellPos::new("zzz2".to_string(), 18278, 2)
+        );
     }
 
     #[test]
