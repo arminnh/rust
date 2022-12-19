@@ -1,0 +1,7 @@
+=OOPS(A2)  ,=AVG
+=nope + 1  ,
+>          ,=XYZ123,
+=SUM(A1:A3),
+^          ,
+=-1 + 1    ,'=IFERROR(A6, "Oops!")'
+=1 / 0     ,^

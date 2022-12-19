@@ -1,0 +1,7 @@
+q#ERROR#: 'OOPS' is not a valid operation                        ,#ERROR#: 'AVG' must be called with (),
+#ERROR#: Unexpected character 'n'                               ,                                     ,
+#ERROR#: 'XYZ123' is not a known name                           ,#ERROR#: 'XYZ123' is not a known name,
+#ERROR#: unsupported operand type(s) for +: 'int' and 'Error'   ,                                     ,
+#ERROR#: unsupported operand type(s) for +: 'int' and 'NoneType',                                     ,
+                                                               0,                                    0,
+#ERROR#: float division by zero                                 ,Oops!                                ,

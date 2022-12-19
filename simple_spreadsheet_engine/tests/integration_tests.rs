@@ -41,3 +41,18 @@ fn functions_on_blocks() {
 fn statistics() {
     compare_files("statistics");
 }
+
+// #[test]
+// fn countdown() {
+//     compare_files("countdown");
+// }
+
+// #[test]
+// fn shopping() {
+//     compare_files("shopping");
+// }
+
+// #[test]
+// fn error() {
+//     compare_files("error");
+// }
