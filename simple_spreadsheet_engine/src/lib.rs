@@ -11,7 +11,7 @@ use crate::sheet::Sheet;
 
 pub fn run(input: String) -> String {
     let sheet = Sheet::parse_input(input);
-    print!("{}\n\n", sheet);
+    // print!("{}\n\n", sheet);
     let processed = sheet.process();
     let out = processed.to_string();
     print!("{}\n\n", out);

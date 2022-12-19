@@ -1,14 +1,10 @@
  1,  2,  3,  4,  5,  6,  7,  8,  9
 -1, -2, -3, -4, -5, -6, -7, -8, -9
 -4, -3, -2, -1,  0,  1,  2,  3,  4
-=AVG(A1:A9)
-=AVG(B1:B9)
-=AVG(C1:C9)
-=COUNT(B1:B9)
-=MAX(B6:B7)
-=MAX(C1:C9)
-=MEDIAN(A3:A7)
-=MIN(B2:B8)
-=MIN(C3:C7)
-=STDEV(A2:A3)
-=SUM(C2:C6)
+=AVG(A1:I1)
+=COUNT(A2:I2)
+=MAX(A3:I3)
+=MEDIAN(C1:F1)
+=MIN(B3:H3)
+=STDEV(A3:I3)
+=SUM(B2:G2)

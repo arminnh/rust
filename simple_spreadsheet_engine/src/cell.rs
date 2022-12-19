@@ -123,8 +123,8 @@ mod tests {
                 "A1:A3".to_string(),
                 1,
                 1,
-                1,
-                3
+                3,
+                1
             ))))
         );
 
@@ -132,8 +132,8 @@ mod tests {
             Cell::from("=SUM(D2:D4)"),
             Cell::Expression(Expression::Function(Function::SUM(CellRange::new(
                 "D2:D4".to_string(),
-                4,
                 2,
+                4,
                 4,
                 4
             ))))

@@ -18,11 +18,11 @@ impl TryFrom<&str> for CellPos {
         // TODO: validate and split with regex instead -- https://crates.io/crates/regex
         match input.find(|c: char| c.is_digit(10)) {
             Some(i) => {
-                if let Ok(column) = input[i..].parse::<usize>() {
-                    let mut row: usize = 0;
+                if let Ok(row) = input[i..].parse::<usize>() {
+                    let mut column: usize = 0;
                     for c in input[..i].chars() {
-                        row *= 26;
-                        row += match c {
+                        column *= 26;
+                        column += match c {
                             'A'..='Z' => c as usize - 'A' as usize + 1,
                             'a'..='z' => c as usize - 'a' as usize + 1,
                             _ => {
@@ -30,7 +30,7 @@ impl TryFrom<&str> for CellPos {
                             }
                         }
                     }
-                    if row == 0 || column == 0 {
+                    if column == 0 || row == 0 {
                         Err(format!("Invalid row '{}' or column '{}'.", row, column))
                     } else {
                         Ok(CellPos::new(input.to_string(), row, column))
@@ -66,19 +66,19 @@ mod tests {
         );
         assert_eq!(
             CellPos::try_from("E9").unwrap(),
-            CellPos::new("E9".to_string(), 5, 9)
+            CellPos::new("E9".to_string(), 9, 5)
         );
         assert_eq!(
             CellPos::try_from("C9999999").unwrap(),
-            CellPos::new("C9999999".to_string(), 3, 9999999)
+            CellPos::new("C9999999".to_string(), 9999999, 3)
         );
         assert_eq!(
             CellPos::try_from("Z123").unwrap(),
-            CellPos::new("Z123".to_string(), 26, 123)
+            CellPos::new("Z123".to_string(), 123, 26)
         );
         assert_eq!(
             CellPos::try_from("z99").unwrap(),
-            CellPos::new("z99".to_string(), 26, 99)
+            CellPos::new("z99".to_string(), 99, 26)
         );
     }
 
@@ -86,43 +86,43 @@ mod tests {
     fn can_parse_multiple_chars() {
         assert_eq!(
             CellPos::try_from("AA1").unwrap(),
-            CellPos::new("AA1".to_string(), 27, 1)
+            CellPos::new("AA1".to_string(), 1, 27)
         );
         assert_eq!(
             CellPos::try_from("AB234").unwrap(),
-            CellPos::new("AB234".to_string(), 28, 234)
+            CellPos::new("AB234".to_string(), 234, 28)
         );
         assert_eq!(
             CellPos::try_from("AZ99").unwrap(),
-            CellPos::new("AZ99".to_string(), 52, 99)
+            CellPos::new("AZ99".to_string(), 99, 52)
         );
         assert_eq!(
             CellPos::try_from("ZA100").unwrap(),
-            CellPos::new("ZA100".to_string(), 677, 100)
+            CellPos::new("ZA100".to_string(), 100, 677)
         );
         assert_eq!(
             CellPos::try_from("ZZ2").unwrap(),
-            CellPos::new("ZZ2".to_string(), 702, 2)
+            CellPos::new("ZZ2".to_string(), 2, 702)
         );
         assert_eq!(
             CellPos::try_from("AAA1").unwrap(),
-            CellPos::new("AAA1".to_string(), 703, 1)
+            CellPos::new("AAA1".to_string(), 1, 703)
         );
         assert_eq!(
             CellPos::try_from("AAZ1").unwrap(),
-            CellPos::new("AAZ1".to_string(), 728, 1)
+            CellPos::new("AAZ1".to_string(), 1, 728)
         );
         assert_eq!(
             CellPos::try_from("CCC1").unwrap(),
-            CellPos::new("CCC1".to_string(), 2109, 1)
+            CellPos::new("CCC1".to_string(), 1, 2109)
         );
         assert_eq!(
             CellPos::try_from("ZZZ1").unwrap(),
-            CellPos::new("ZZZ1".to_string(), 18278, 1)
+            CellPos::new("ZZZ1".to_string(), 1, 18278)
         );
         assert_eq!(
             CellPos::try_from("zzz2").unwrap(),
-            CellPos::new("zzz2".to_string(), 18278, 2)
+            CellPos::new("zzz2".to_string(), 2, 18278)
         );
     }
 
@@ -146,15 +146,15 @@ mod tests {
     fn handles_invalid_row_or_column() {
         assert_eq!(
             CellPos::try_from("A0"),
-            Err("Invalid row '1' or column '0'.".to_string())
-        );
-        assert_eq!(
-            CellPos::try_from("1"),
             Err("Invalid row '0' or column '1'.".to_string())
         );
         assert_eq!(
+            CellPos::try_from("1"),
+            Err("Invalid row '1' or column '0'.".to_string())
+        );
+        assert_eq!(
             CellPos::try_from("123"),
-            Err("Invalid row '0' or column '123'.".to_string())
+            Err("Invalid row '123' or column '0'.".to_string())
         );
     }
 

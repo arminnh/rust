@@ -72,7 +72,7 @@ mod tests {
         );
         assert_eq!(
             NumberOrCellPos::try_from("ZA99").unwrap(),
-            NumberOrCellPos::CellPos(CellPos::new("ZA99".to_string(), 677, 99))
+            NumberOrCellPos::CellPos(CellPos::new("ZA99".to_string(), 99, 677))
         );
     }
 

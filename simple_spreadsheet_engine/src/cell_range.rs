@@ -76,19 +76,19 @@ mod tests {
     fn can_parse_cell_range() {
         assert_eq!(
             CellRange::try_from("A1:A3").unwrap(),
-            CellRange::new("A1:A3".to_string(), 1, 1, 1, 3)
+            CellRange::new("A1:A3".to_string(), 1, 1, 3, 1)
         );
         assert_eq!(
             CellRange::try_from("A2:B8").unwrap(),
-            CellRange::new("A2:B8".to_string(), 1, 2, 2, 8)
+            CellRange::new("A2:B8".to_string(), 2, 1, 8, 2)
         );
         assert_eq!(
             CellRange::try_from("D2:D4").unwrap(),
-            CellRange::new("D2:D4".to_string(), 4, 2, 4, 4)
+            CellRange::new("D2:D4".to_string(), 2, 4, 4, 4)
         );
         assert_eq!(
             CellRange::try_from("AA999:AAA1000").unwrap(),
-            CellRange::new("AA999:AAA1000".to_string(), 27, 999, 703, 1000)
+            CellRange::new("AA999:AAA1000".to_string(), 999, 27, 1000, 703)
         );
     }
 

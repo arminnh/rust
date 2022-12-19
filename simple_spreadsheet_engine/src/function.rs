@@ -143,31 +143,31 @@ mod tests {
     fn can_parse_functions() {
         assert_eq!(
             Function::try_from("AVG(A1:A3)").unwrap(),
-            Function::AVG(CellRange::new("A1:A3".to_string(), 1, 1, 1, 3))
+            Function::AVG(CellRange::new("A1:A3".to_string(), 1, 1, 3, 1))
         );
         assert_eq!(
             Function::try_from("COUNT(B2:B11)").unwrap(),
-            Function::COUNT(CellRange::new("B2:B11".to_string(), 2, 2, 2, 11))
+            Function::COUNT(CellRange::new("B2:B11".to_string(), 2, 2, 11, 2))
         );
         assert_eq!(
             Function::try_from("MAX(A2:A8)").unwrap(),
-            Function::MAX(CellRange::new("A2:A8".to_string(), 1, 2, 1, 8))
+            Function::MAX(CellRange::new("A2:A8".to_string(), 2, 1, 8, 1))
         );
         assert_eq!(
             Function::try_from("MEDIAN(C1:C3)").unwrap(),
-            Function::MEDIAN(CellRange::new("C1:C3".to_string(), 3, 1, 3, 3))
+            Function::MEDIAN(CellRange::new("C1:C3".to_string(), 1, 3, 3, 3))
         );
         assert_eq!(
             Function::try_from("MIN(A2:A8)").unwrap(),
-            Function::MIN(CellRange::new("A2:A8".to_string(), 1, 2, 1, 8))
+            Function::MIN(CellRange::new("A2:A8".to_string(), 2, 1, 8, 1))
         );
         assert_eq!(
             Function::try_from("STDEV(Z1:Z10)").unwrap(),
-            Function::STDEV(CellRange::new("Z1:Z10".to_string(), 26, 1, 26, 10))
+            Function::STDEV(CellRange::new("Z1:Z10".to_string(), 1, 26, 10, 26))
         );
         assert_eq!(
             Function::try_from("SUM(D2:D4)").unwrap(),
-            Function::SUM(CellRange::new("D2:D4".to_string(), 4, 2, 4, 4))
+            Function::SUM(CellRange::new("D2:D4".to_string(), 2, 4, 4, 4))
         );
     }
 

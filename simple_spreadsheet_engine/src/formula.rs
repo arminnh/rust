@@ -188,7 +188,7 @@ mod tests {
             Formula::try_from("Z20 ** 3").unwrap(),
             Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Exponentiation),
-                NumberOrCellPos::CellPos(CellPos::new("Z20".to_string(), 26, 20)),
+                NumberOrCellPos::CellPos(CellPos::new("Z20".to_string(), 20, 26)),
                 NumberOrCellPos::Number(3.0)
             )
         );
@@ -207,7 +207,7 @@ mod tests {
             Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Multiplication),
                 NumberOrCellPos::CellPos(CellPos::new("B2".to_string(), 2, 2)),
-                NumberOrCellPos::CellPos(CellPos::new("C2".to_string(), 3, 2))
+                NumberOrCellPos::CellPos(CellPos::new("C2".to_string(), 2, 3))
             )
         );
 
