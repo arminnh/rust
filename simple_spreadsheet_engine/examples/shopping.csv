@@ -1,0 +1,5 @@
+descr  ,amount, unit_price,total_price
+Cookies,     4,       2.95,=B2 * C2
+Coffee ,     1,=9.60 * 0.8,^
+Water  ,     2,       1.20,^
+Total  ,      ,           ,=SUM(D2:D4)

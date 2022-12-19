@@ -18,6 +18,26 @@ fn arithmetic_with_literals() {
 }
 
 #[test]
-fn arithmetic_with_basic_cell_references() {
+fn arithmetic_with_references() {
     compare_files("arithmetic_with_references");
 }
+
+#[test]
+fn functions_on_rows() {
+    compare_files("functions_on_rows");
+}
+
+#[test]
+fn functions_on_columns() {
+    compare_files("functions_on_columns");
+}
+
+#[test]
+fn functions_on_blocks() {
+    compare_files("functions_on_blocks");
+}
+
+// #[test]
+// fn shopping() {
+//     compare_files("shopping");
+// }

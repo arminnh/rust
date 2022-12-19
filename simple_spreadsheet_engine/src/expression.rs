@@ -133,17 +133,35 @@ mod tests {
     fn can_parse_function_expressions() {
         assert_eq!(
             Expression::try_from("AVG(A1:A3)").unwrap(),
-            Expression::Function(Function::AVG(CellRange::new(1, 1, 1, 3)))
+            Expression::Function(Function::AVG(CellRange::new(
+                "A1:A3".to_string(),
+                1,
+                1,
+                1,
+                3
+            )))
         );
 
         assert_eq!(
             Expression::try_from("COUNT(B2:B11)").unwrap(),
-            Expression::Function(Function::COUNT(CellRange::new(2, 2, 2, 11)))
+            Expression::Function(Function::COUNT(CellRange::new(
+                "B2:B11".to_string(),
+                2,
+                2,
+                2,
+                11
+            )))
         );
 
         assert_eq!(
             Expression::try_from("SUM(D2:D4)").unwrap(),
-            Expression::Function(Function::SUM(CellRange::new(4, 2, 4, 4)))
+            Expression::Function(Function::SUM(CellRange::new(
+                "D2:D4".to_string(),
+                4,
+                2,
+                4,
+                4
+            )))
         );
     }
 

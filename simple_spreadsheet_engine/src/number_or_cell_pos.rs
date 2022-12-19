@@ -8,6 +8,8 @@ pub enum NumberOrCellPos {
 }
 
 impl NumberOrCellPos {
+    /// Return the held literal or the value of the cell at CellPos (this only works if that cell contains a number).
+    /// TODO: resolve values through a dependency graph to ensure all references can resolve successfully?
     pub fn resolve(&self, sheet: &Sheet) -> Option<f64> {
         match self {
             NumberOrCellPos::Number(n) => Some(*n),

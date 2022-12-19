@@ -120,14 +120,22 @@ mod tests {
         assert_eq!(
             Cell::from("=AVG(A1:A3)"),
             Cell::Expression(Expression::Function(Function::AVG(CellRange::new(
-                1, 1, 1, 3
+                "A1:A3".to_string(),
+                1,
+                1,
+                1,
+                3
             ))))
         );
 
         assert_eq!(
             Cell::from("=SUM(D2:D4)"),
             Cell::Expression(Expression::Function(Function::SUM(CellRange::new(
-                4, 2, 4, 4
+                "D2:D4".to_string(),
+                4,
+                2,
+                4,
+                4
             ))))
         );
     }

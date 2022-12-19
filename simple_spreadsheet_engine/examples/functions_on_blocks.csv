@@ -1,0 +1,16 @@
+1 ,  2,  3
+4 ,  5,  6
+7 ,  8,  9
+10, 11, 12
+=AVG(A1:D3)
+=COUNT(A1:D3)
+=COUNT(B2:D3)
+=MAX(A1:C3)
+=MAX(C1:D3)
+=MEDIAN(B2:D3)
+=MIN(C2:D3)
+=STDEV(A1:D3)
+=SUM(A1:B2)
+=SUM(A1:C3)
+=SUM(A1:D3)
+=SUM(C2:D3)
