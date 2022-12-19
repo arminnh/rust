@@ -25,13 +25,19 @@ impl Sheet {
 
     /// Processes/resolves all Cells into a ProcessedSheet ready for displaying.
     pub fn process(&self) -> ProcessedSheet {
-        let rows = self
-            .content
-            .iter()
-            .map(|row| row.iter().map(|col| col.process(self)).collect())
-            .collect();
+        let mut processed = ProcessedSheet {
+            content: Vec::new(),
+        };
 
-        ProcessedSheet { content: rows }
+        for row in &self.content {
+            processed.content.push(Vec::new());
+            for col in row {
+                let processed_cell = col.process(self, &processed);
+                processed.content.last_mut().unwrap().push(processed_cell);
+            }
+        }
+
+        processed
     }
 }
 

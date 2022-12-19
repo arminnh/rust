@@ -1,6 +1,6 @@
 use crate::formula::Formula;
 use crate::function::Function;
-use crate::sheet::Sheet;
+use crate::sheet::{ProcessedSheet, Sheet};
 
 #[derive(Debug, PartialEq)]
 pub enum Clone {
@@ -10,7 +10,9 @@ pub enum Clone {
 }
 
 impl Clone {
-    fn process(&self, sheet: &Sheet) -> String {
+    fn process(&self, sheet: &Sheet, processed: &ProcessedSheet) -> String {
+        // TODO: Use parsed sheet to get function expression and adapt it. Use processed sheet to find already
+        // resolved values.
         todo!()
     }
 }
@@ -23,9 +25,9 @@ pub enum Expression {
 }
 
 impl Expression {
-    pub fn process(&self, sheet: &Sheet) -> String {
+    pub fn process(&self, sheet: &Sheet, processed: &ProcessedSheet) -> String {
         match self {
-            Expression::Clone(e) => e.process(sheet),
+            Expression::Clone(e) => e.process(sheet, processed),
             Expression::Function(e) => e.process(sheet),
             Expression::Formula(e) => e.process(sheet),
         }
