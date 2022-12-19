@@ -1,0 +1,8 @@
+runtime (s),average,=AVG(A2:A8)
+         30,median ,=MEDIAN(A2:A8)
+         40,stdev  ,=STDEV(A2:A8)
+         32,       ,
+         54,       ,
+         23,       ,
+         34,       ,
+         29,       ,_

@@ -37,7 +37,7 @@ fn functions_on_blocks() {
     compare_files("functions_on_blocks");
 }
 
-// #[test]
-// fn shopping() {
-//     compare_files("shopping");
-// }
+#[test]
+fn statistics() {
+    compare_files("statistics");
+}
