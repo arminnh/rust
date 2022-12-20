@@ -1,7 +1,9 @@
-use crate::expression::Expression;
-use crate::sheet::{ProcessedSheet, Sheet};
+use std::fmt;
 
-#[derive(Debug, PartialEq)]
+use crate::expression::Expression;
+use crate::sheet::Sheet;
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Cell {
     Empty,
     Error(String),
@@ -13,13 +15,10 @@ pub enum Cell {
 impl Cell {
     /// Process/resolve the Cell so it can be displayed. If expression, resolve the expression, otherwise simply
     /// return the cell because the content can be displayed directly.
-    pub fn process(&self, sheet: &Sheet, processed: &ProcessedSheet) -> String {
+    pub fn process(&self, sheet: &Sheet, processed: &Sheet) -> Cell {
         match self {
-            Cell::Empty => "".to_string(),
-            Cell::Error(e) => "#ERROR#: ".to_string() + e,
             Cell::Expression(e) => e.process(sheet, processed),
-            Cell::Number(n) => n.to_string(),
-            Cell::Text(t) => t.clone(),
+            cell => cell.clone(),
         }
     }
 }
@@ -27,7 +26,7 @@ impl Cell {
 impl From<&str> for Cell {
     fn from(input: &str) -> Self {
         let trimmed = input.trim();
-        if let Some(first_char) = trimmed.chars().nth(0) {
+        if let Some(first_char) = trimmed.chars().next() {
             match first_char {
                 '^' | '<' | '>' => Cell::Expression(Expression::try_from(first_char).unwrap()),
                 '=' => match Expression::try_from(&trimmed[1..]) {
@@ -46,6 +45,18 @@ impl From<&str> for Cell {
             }
         } else {
             Cell::Empty
+        }
+    }
+}
+
+impl fmt::Display for Cell {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Cell::Empty => write!(f, ""),
+            Cell::Error(e) => write!(f, "#ERROR#: {}", e),
+            Cell::Expression(e) => write!(f, "{:?}", e),
+            Cell::Number(n) => write!(f, "{}", n),
+            Cell::Text(t) => write!(f, "{}", t),
         }
     }
 }
@@ -120,7 +131,7 @@ mod tests {
     fn parses_function_cells() {
         assert_eq!(
             Cell::from("=AVG(A1:A3)"),
-            Cell::Expression(Expression::Function(Function::AVG(CellRange::new(
+            Cell::Expression(Expression::Function(Function::Avg(CellRange::new(
                 "A1:A3".to_string(),
                 1,
                 1,
@@ -131,7 +142,7 @@ mod tests {
 
         assert_eq!(
             Cell::from("=SUM(D2:D4)"),
-            Cell::Expression(Expression::Function(Function::SUM(CellRange::new(
+            Cell::Expression(Expression::Function(Function::Sum(CellRange::new(
                 "D2:D4".to_string(),
                 2,
                 4,

@@ -1,4 +1,4 @@
-q#ERROR#: 'OOPS' is not a valid operation                        ,#ERROR#: 'AVG' must be called with (),
+#ERROR#: 'OOPS' is not a valid operation                        ,#ERROR#: 'AVG' must be called with (),
 #ERROR#: Unexpected character 'n'                               ,                                     ,
 #ERROR#: 'XYZ123' is not a known name                           ,#ERROR#: 'XYZ123' is not a known name,
 #ERROR#: unsupported operand type(s) for +: 'int' and 'Error'   ,                                     ,

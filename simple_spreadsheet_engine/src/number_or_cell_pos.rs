@@ -1,8 +1,8 @@
 use std::fmt;
 
-use crate::{cell_pos::CellPos, sheet::Sheet};
+use crate::{cell::Cell, cell_pos::CellPos, sheet::Sheet};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum NumberOrCellPos {
     // TODO: support generic number types -- https://crates.io/crates/num
     Number(f64),
@@ -16,7 +16,7 @@ impl NumberOrCellPos {
         match self {
             NumberOrCellPos::Number(n) => Some(*n),
             NumberOrCellPos::CellPos(pos) => match sheet.content[pos.row - 1][pos.col - 1] {
-                crate::cell::Cell::Number(n) => Some(n),
+                Cell::Number(n) => Some(n),
                 _ => None,
             },
         }

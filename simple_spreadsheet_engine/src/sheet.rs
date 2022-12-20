@@ -2,14 +2,9 @@ use std::fmt;
 
 use crate::cell::Cell;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Sheet {
     pub content: Vec<Vec<Cell>>,
-}
-
-#[derive(Debug)]
-pub struct ProcessedSheet {
-    pub content: Vec<Vec<String>>,
 }
 
 impl Sheet {
@@ -17,23 +12,20 @@ impl Sheet {
     pub fn parse_input(input: String) -> Sheet {
         let rows = input
             .lines()
-            .map(|line| line.split(',').map(|col| Cell::from(col)).collect())
+            .map(|line| line.split(',').map(Cell::from).collect())
             .collect();
 
         Sheet { content: rows }
     }
 
-    /// Processes/resolves all Cells into a ProcessedSheet ready for displaying.
-    pub fn process(&self) -> ProcessedSheet {
-        let mut processed = ProcessedSheet {
-            content: Vec::new(),
-        };
+    /// Processes/resolves all computations to prepare for displaying.
+    pub fn process(&self) -> Sheet {
+        let mut processed = self.clone();
 
-        for row in &self.content {
-            processed.content.push(Vec::new());
-            for col in row {
+        for (i, row) in self.content.iter().enumerate() {
+            for (j, col) in row.iter().enumerate() {
                 let processed_cell = col.process(self, &processed);
-                processed.content.last_mut().unwrap().push(processed_cell);
+                processed.content[i][j] = processed_cell;
             }
         }
 
@@ -46,21 +38,12 @@ impl fmt::Display for Sheet {
         let out: Vec<String> = self
             .content
             .iter()
-            .enumerate()
-            .map(|(i, row)| format!("{}: {:?}", i, row))
-            .collect();
-
-        write!(f, "{}", out.join("\n"))
-    }
-}
-
-impl fmt::Display for ProcessedSheet {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let out: Vec<String> = self
-            .content
-            .iter()
-            .enumerate()
-            .map(|(i, row)| row.join(", "))
+            .map(|row| {
+                row.iter()
+                    .map(|col| format!("{}", col))
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            })
             .collect();
 
         write!(f, "{}", out.join("\n"))

@@ -1,6 +1,6 @@
-use crate::cell_pos::CellPos;
+use crate::{cell::Cell, cell_pos::CellPos, sheet::Sheet};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct CellRange {
     pub str: String,
     pub start_cell: CellPos,
@@ -8,6 +8,7 @@ pub struct CellRange {
 }
 
 impl CellRange {
+    #[allow(dead_code)]
     pub fn new(
         str: String,
         start_row: usize,
@@ -15,7 +16,7 @@ impl CellRange {
         end_row: usize,
         end_col: usize,
     ) -> Self {
-        let (left_str, right_str) = str.split_once(":").unwrap();
+        let (left_str, right_str) = str.split_once(':').unwrap();
         CellRange {
             str: str.clone(),
             start_cell: CellPos::new(left_str.to_string(), start_row, start_col),
@@ -26,13 +27,12 @@ impl CellRange {
     /// Return a vector of numbers in cells that lie in the specified range.
     /// Only works for cells that contain a number.
     /// TODO: resolve values through a dependency graph to ensure all references can resolve successfully?
-    pub(crate) fn resolve(&self, sheet: &crate::sheet::Sheet) -> Vec<f64> {
+    pub(crate) fn resolve(&self, sheet: &Sheet) -> Vec<f64> {
         let mut out = Vec::new();
         for i in self.start_cell.row..=self.end_cell.row {
             for j in self.start_cell.col..=self.end_cell.col {
-                match sheet.content[i - 1][j - 1] {
-                    crate::cell::Cell::Number(n) => out.push(n),
-                    _ => (),
+                if let Cell::Number(n) = sheet.content[i - 1][j - 1] {
+                    out.push(n)
                 }
             }
         }

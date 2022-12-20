@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct CellPos {
     pub str: String,
     pub row: usize,
@@ -16,7 +16,7 @@ impl TryFrom<&str> for CellPos {
 
     fn try_from(input: &str) -> Result<Self, Self::Error> {
         // TODO: validate and split with regex instead -- https://crates.io/crates/regex
-        match input.find(|c: char| c.is_digit(10)) {
+        match input.find(|c: char| c.is_ascii_digit()) {
             Some(i) => {
                 if let Ok(row) = input[i..].parse::<usize>() {
                     let mut column: usize = 0;
@@ -38,11 +38,11 @@ impl TryFrom<&str> for CellPos {
                 } else {
                     Err(format!(
                         "Could not parse '{}' as column number.",
-                        input[i..].to_string()
+                        &input[i..]
                     ))
                 }
             }
-            _ => Err(format!("No digit in '{}'.", input.to_string())),
+            _ => Err(format!("No digit in '{}'.", input)),
         }
     }
 }

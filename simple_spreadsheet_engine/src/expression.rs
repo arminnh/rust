@@ -1,8 +1,9 @@
+use crate::cell::Cell;
 use crate::formula::Formula;
 use crate::function::Function;
-use crate::sheet::{ProcessedSheet, Sheet};
+use crate::sheet::Sheet;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Clone {
     Left,
     Right,
@@ -10,14 +11,14 @@ pub enum Clone {
 }
 
 impl Clone {
-    fn process(&self, sheet: &Sheet, processed: &ProcessedSheet) -> String {
+    fn process(&self, _sheet: &Sheet, _processed: &Sheet) -> Cell {
         // TODO: Use parsed sheet to get function expression and adapt it. Use processed sheet to find already
         // resolved values.
         todo!()
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
     Clone(Clone),
     Function(Function),
@@ -25,7 +26,7 @@ pub enum Expression {
 }
 
 impl Expression {
-    pub fn process(&self, sheet: &Sheet, processed: &ProcessedSheet) -> String {
+    pub fn process(&self, sheet: &Sheet, processed: &Sheet) -> Cell {
         match self {
             Expression::Clone(e) => e.process(sheet, processed),
             Expression::Function(e) => e.process(sheet),
@@ -52,7 +53,7 @@ impl TryFrom<&str> for Expression {
 
     fn try_from(input: &str) -> Result<Self, Self::Error> {
         if input.len() == 1 {
-            return Expression::try_from(input.chars().nth(0).unwrap());
+            return Expression::try_from(input.chars().next().unwrap());
         }
         if let Ok(fun) = Function::try_from(input) {
             return Ok(Expression::Function(fun));
@@ -135,7 +136,7 @@ mod tests {
     fn can_parse_function_expressions() {
         assert_eq!(
             Expression::try_from("AVG(A1:A3)").unwrap(),
-            Expression::Function(Function::AVG(CellRange::new(
+            Expression::Function(Function::Avg(CellRange::new(
                 "A1:A3".to_string(),
                 1,
                 1,
@@ -146,7 +147,7 @@ mod tests {
 
         assert_eq!(
             Expression::try_from("COUNT(B2:B11)").unwrap(),
-            Expression::Function(Function::COUNT(CellRange::new(
+            Expression::Function(Function::Count(CellRange::new(
                 "B2:B11".to_string(),
                 2,
                 2,
@@ -157,7 +158,7 @@ mod tests {
 
         assert_eq!(
             Expression::try_from("SUM(D2:D4)").unwrap(),
-            Expression::Function(Function::SUM(CellRange::new(
+            Expression::Function(Function::Sum(CellRange::new(
                 "D2:D4".to_string(),
                 2,
                 4,
