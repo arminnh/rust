@@ -3,7 +3,7 @@ use std::fmt;
 use crate::expression::Expression;
 use crate::sheet::Sheet;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Cell {
     Empty,
     Error(String),
@@ -13,23 +13,20 @@ pub enum Cell {
 }
 
 impl Cell {
-    /// Process/resolve the Cell so it can be displayed. If expression, resolve the expression, otherwise simply
+    /// Resolve the Cell so it can be displayed. If expression, resolve the expression, otherwise simply
     /// return the cell because the content can be displayed directly.
-    pub fn process(&self, sheet: &Sheet, processed: &Sheet) -> Cell {
+    pub fn resolve(&self, sheet: &Sheet, resolved: &mut Sheet) {
         match self {
-            Cell::Expression(e) => e.process(sheet, processed),
-            cell => cell.clone(),
+            Cell::Expression(e) => e.resolve(sheet, resolved),
+            _ => (),
         }
     }
-}
 
-impl From<&str> for Cell {
-    fn from(input: &str) -> Self {
+    pub fn parse(row: usize, col: usize, input: &str) -> Self {
         let trimmed = input.trim();
         if let Some(first_char) = trimmed.chars().next() {
             match first_char {
-                '^' | '<' | '>' => Cell::Expression(Expression::try_from(first_char).unwrap()),
-                '=' => match Expression::try_from(&trimmed[1..]) {
+                '^' | '<' | '>' | '=' => match Expression::parse(row, col, &trimmed[1..]) {
                     Ok(expression) => Cell::Expression(expression),
                     Err(e) => Cell::Error(e.to_string()),
                 },
@@ -73,35 +70,35 @@ mod tests {
 
     #[test]
     fn parses_empty_cell() {
-        assert_eq!(Cell::from(""), Cell::Empty);
+        assert_eq!(Cell::parse(""), Cell::Empty);
     }
 
     #[test]
     fn parses_text_cells() {
-        assert_eq!(Cell::from("amount"), Cell::Text("amount".to_string()));
-        assert_eq!(Cell::from("Coffee"), Cell::Text("Coffee".to_string()));
-        assert_eq!(Cell::from("Total"), Cell::Text("Total".to_string()));
+        assert_eq!(Cell::parse("amount"), Cell::Text("amount".to_string()));
+        assert_eq!(Cell::parse("Coffee"), Cell::Text("Coffee".to_string()));
+        assert_eq!(Cell::parse("Total"), Cell::Text("Total".to_string()));
         assert_eq!(
-            Cell::from("total_price"),
+            Cell::parse("total_price"),
             Cell::Text("total_price".to_string())
         );
-        assert_eq!(Cell::from("#ERROR#"), Cell::Text("#ERROR#".to_string()));
+        assert_eq!(Cell::parse("#ERROR#"), Cell::Text("#ERROR#".to_string()));
     }
 
     #[test]
     fn parses_clone_cells() {
         assert_eq!(
-            Cell::from("^"),
+            Cell::parse("^"),
             Cell::Expression(Expression::Clone(Clone::Top))
         );
 
         assert_eq!(
-            Cell::from("<"),
+            Cell::parse("<"),
             Cell::Expression(Expression::Clone(Clone::Left))
         );
 
         assert_eq!(
-            Cell::from(">"),
+            Cell::parse(">"),
             Cell::Expression(Expression::Clone(Clone::Right))
         );
     }
@@ -109,7 +106,7 @@ mod tests {
     #[test]
     fn parses_formula_cells() {
         assert_eq!(
-            Cell::from("=A1 + B2"),
+            Cell::parse("=A1 + B2"),
             Cell::Expression(Expression::Formula(Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Addition),
                 NumberOrCellPos::CellPos(CellPos::new("A1".to_string(), 1, 1)),
@@ -118,7 +115,7 @@ mod tests {
         );
 
         assert_eq!(
-            Cell::from("=A1 - 1"),
+            Cell::parse("=A1 - 1"),
             Cell::Expression(Expression::Formula(Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Subtraction),
                 NumberOrCellPos::CellPos(CellPos::new("A1".to_string(), 1, 1)),
@@ -130,7 +127,7 @@ mod tests {
     #[test]
     fn parses_function_cells() {
         assert_eq!(
-            Cell::from("=AVG(A1:A3)"),
+            Cell::parse("=AVG(A1:A3)"),
             Cell::Expression(Expression::Function(Function::Avg(CellRange::new(
                 "A1:A3".to_string(),
                 1,
@@ -141,7 +138,7 @@ mod tests {
         );
 
         assert_eq!(
-            Cell::from("=SUM(D2:D4)"),
+            Cell::parse("=SUM(D2:D4)"),
             Cell::Expression(Expression::Function(Function::Sum(CellRange::new(
                 "D2:D4".to_string(),
                 2,
@@ -154,10 +151,10 @@ mod tests {
 
     #[test]
     fn parses_error_cells() {
-        println!("{:?}", Cell::from("=nope + 1"));
-        println!("{:?}", Cell::from("=IF(1, 2, 3)"));
-        println!("{:?}", Cell::from("=LOOKUP(F4, B5:B9, C5:C9)"));
-        println!("{:?}", Cell::from("=DATE(2015, 5, 20)"));
-        println!("{:?}", Cell::from("=AVG(?)"));
+        println!("{:?}", Cell::parse("=nope + 1"));
+        println!("{:?}", Cell::parse("=IF(1, 2, 3)"));
+        println!("{:?}", Cell::parse("=LOOKUP(F4, B5:B9, C5:C9)"));
+        println!("{:?}", Cell::parse("=DATE(2015, 5, 20)"));
+        println!("{:?}", Cell::parse("=AVG(?)"));
     }
 }

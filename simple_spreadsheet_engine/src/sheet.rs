@@ -2,9 +2,9 @@ use std::fmt;
 
 use crate::cell::Cell;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Sheet {
-    pub content: Vec<Vec<Cell>>,
+    pub cells: Vec<Vec<Cell>>,
 }
 
 impl Sheet {
@@ -12,31 +12,38 @@ impl Sheet {
     pub fn parse_input(input: String) -> Sheet {
         let rows = input
             .lines()
-            .map(|line| line.split(',').map(Cell::from).collect())
+            .enumerate()
+            .map(|(i, line)| {
+                line.split(',')
+                    .enumerate()
+                    .map(|(j, cell)| Cell::parse(i, j, cell))
+                    .collect()
+            })
             .collect();
 
-        Sheet { content: rows }
+        Sheet { cells: rows }
     }
 
     /// Processes/resolves all computations to prepare for displaying.
-    pub fn process(&self) -> Sheet {
-        let mut processed = self.clone();
+    pub fn resolve(&self) -> Sheet {
+        let mut resolved = Sheet {
+            cells: self.cells.iter().map(|_| Vec::new()).collect(),
+        };
 
-        for (i, row) in self.content.iter().enumerate() {
-            for (j, col) in row.iter().enumerate() {
-                let processed_cell = col.process(self, &processed);
-                processed.content[i][j] = processed_cell;
+        for row in self.cells.iter() {
+            for col in row.iter() {
+                col.resolve(self, &mut resolved);
             }
         }
 
-        processed
+        resolved
     }
 }
 
 impl fmt::Display for Sheet {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let out: Vec<String> = self
-            .content
+            .cells
             .iter()
             .map(|row| {
                 row.iter()

@@ -1,6 +1,6 @@
 use crate::{cell::Cell, cell_pos::CellPos, sheet::Sheet};
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct CellRange {
     pub str: String,
     pub start_cell: CellPos,
@@ -24,30 +24,11 @@ impl CellRange {
         }
     }
 
-    /// Return a vector of numbers in cells that lie in the specified range.
-    /// Only works for cells that contain a number.
-    /// TODO: resolve values through a dependency graph to ensure all references can resolve successfully?
-    pub(crate) fn resolve(&self, sheet: &Sheet) -> Vec<f64> {
-        let mut out = Vec::new();
-        for i in self.start_cell.row..=self.end_cell.row {
-            for j in self.start_cell.col..=self.end_cell.col {
-                if let Cell::Number(n) = sheet.content[i - 1][j - 1] {
-                    out.push(n)
-                }
-            }
-        }
-        out
-    }
-}
-
-impl TryFrom<&str> for CellRange {
-    type Error = String;
-
-    fn try_from(input: &str) -> Result<Self, Self::Error> {
+    pub fn parse(input: &str) -> Result<Self, String> {
         // TODO: don't allow invalid ranges
         // TODO: support absolute reference with $
         match input.split(':').collect::<Vec<&str>>()[..] {
-            [lhs, rhs] => match (CellPos::try_from(lhs), CellPos::try_from(rhs)) {
+            [lhs, rhs] => match (CellPos::parse(lhs), CellPos::parse(rhs)) {
                 (Ok(start_cell), Ok(end_cell)) => Ok(CellRange {
                     str: lhs.to_owned() + ":" + rhs,
                     start_cell,
@@ -63,6 +44,21 @@ impl TryFrom<&str> for CellRange {
             _ => Err(format!("Could not find ':' in cell range '{}'.", input)),
         }
     }
+
+    /// Return a vector of numbers in cells that lie in the specified range.
+    /// Only works for cells that contain a number.
+    /// TODO: resolve values through a dependency graph to ensure all references can resolve successfully?
+    pub(crate) fn resolve(&self, sheet: &Sheet) -> Vec<f64> {
+        let mut out = Vec::new();
+        for i in self.start_cell.row..=self.end_cell.row {
+            for j in self.start_cell.col..=self.end_cell.col {
+                if let Cell::Number(n) = sheet.cells[i - 1][j - 1] {
+                    out.push(n)
+                }
+            }
+        }
+        out
+    }
 }
 
 #[cfg(test)]
@@ -75,19 +71,19 @@ mod tests {
     #[test]
     fn can_parse_cell_range() {
         assert_eq!(
-            CellRange::try_from("A1:A3").unwrap(),
+            CellRange::parse("A1:A3").unwrap(),
             CellRange::new("A1:A3".to_string(), 1, 1, 3, 1)
         );
         assert_eq!(
-            CellRange::try_from("A2:B8").unwrap(),
+            CellRange::parse("A2:B8").unwrap(),
             CellRange::new("A2:B8".to_string(), 2, 1, 8, 2)
         );
         assert_eq!(
-            CellRange::try_from("D2:D4").unwrap(),
+            CellRange::parse("D2:D4").unwrap(),
             CellRange::new("D2:D4".to_string(), 2, 4, 4, 4)
         );
         assert_eq!(
-            CellRange::try_from("AA999:AAA1000").unwrap(),
+            CellRange::parse("AA999:AAA1000").unwrap(),
             CellRange::new("AA999:AAA1000".to_string(), 999, 27, 1000, 703)
         );
     }
@@ -95,35 +91,35 @@ mod tests {
     #[test]
     fn handles_invalid_input() {
         assert_eq!(
-            CellRange::try_from(""),
+            CellRange::parse(""),
             Err("Could not find ':' in cell range ''.".to_string())
         );
         assert_eq!(
-            CellRange::try_from("?"),
+            CellRange::parse("?"),
             Err("Could not find ':' in cell range '?'.".to_string())
         );
         assert_eq!(
-            CellRange::try_from("A1"),
+            CellRange::parse("A1"),
             Err("Could not find ':' in cell range 'A1'.".to_string())
         );
         assert_eq!(
-            CellRange::try_from("#ERROR#"),
+            CellRange::parse("#ERROR#"),
             Err("Could not find ':' in cell range '#ERROR#'.".to_string())
         );
         assert_eq!(
-            CellRange::try_from("A1:"),
+            CellRange::parse("A1:"),
             Err("Right side is not a valid cell range: No digit in ''.".to_string())
         );
         assert_eq!(
-            CellRange::try_from(":A1"),
+            CellRange::parse(":A1"),
             Err("Left side is not a valid cell range: No digit in ''.".to_string())
         );
         assert_eq!(
-            CellRange::try_from("2X:3Y"),
+            CellRange::parse("2X:3Y"),
             Err("Input not a valid cell range: { lhs: 'Could not parse '2X' as column number.', rhs: 'Could not parse '3Y' as column number.' }.".to_string())
         );
         assert_eq!(
-            CellRange::try_from("1A:A1"),
+            CellRange::parse("1A:A1"),
             Err(
                 "Left side is not a valid cell range: Could not parse '1A' as column number."
                     .to_string()

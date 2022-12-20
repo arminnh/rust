@@ -1,7 +1,7 @@
 use crate::{cell::Cell, number_or_cell_pos::NumberOrCellPos, sheet::Sheet};
 
 // TODO: Add support for % operator. E.g '=A * 10%'
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum ArithmeticOperator {
     Addition,       // A + B
     Division,       // A / B
@@ -21,7 +21,7 @@ pub enum ArithmeticOperator {
 //     NotEqual,
 // }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Operator {
     ArithmeticOperator(ArithmeticOperator),
     // TODO: Add support for comparison operations
@@ -30,7 +30,7 @@ pub enum Operator {
     // TextConcatenationOperator,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Formula {
     operator: Operator,
     left: NumberOrCellPos,
@@ -38,66 +38,7 @@ pub struct Formula {
 }
 
 impl Formula {
-    #[allow(dead_code)]
-    pub fn new(operator: Operator, left: NumberOrCellPos, right: NumberOrCellPos) -> Self {
-        Formula {
-            operator,
-            left,
-            right,
-        }
-    }
-
-    pub fn process(&self, sheet: &Sheet) -> Cell {
-        if let (Some(lhs), Some(rhs)) = (self.left.resolve(sheet), self.right.resolve(sheet)) {
-            match &self.operator {
-                Operator::ArithmeticOperator(op) => match op {
-                    ArithmeticOperator::Addition => {
-                        println!("..> ={} + {}", self.left, self.right);
-                        println!("... {} + {}", lhs, rhs);
-                        let out = lhs + rhs;
-                        println!("... {}\n", out);
-                        Cell::Number(out)
-                    }
-                    ArithmeticOperator::Division => {
-                        println!("..> ={} / {}", self.left, self.right);
-                        println!("... {} / {}", lhs, rhs);
-                        let out = lhs / rhs;
-                        println!("... {}\n", out);
-                        Cell::Number(out)
-                    }
-                    ArithmeticOperator::Exponentiation => {
-                        println!("..> ={} ** {}", self.left, self.right);
-                        println!("... {} ** {}", lhs, rhs);
-                        let out = f64::powf(lhs, rhs);
-                        println!("... {}\n", out);
-                        Cell::Number(out)
-                    }
-                    ArithmeticOperator::Multiplication => {
-                        println!("..> ={} * {}", self.left, self.right);
-                        println!("... {} * {}", lhs, rhs);
-                        let out = lhs * rhs;
-                        println!("... {}\n", out);
-                        Cell::Number(out)
-                    }
-                    ArithmeticOperator::Subtraction => {
-                        println!("..> ={} - {}", self.left, self.right);
-                        println!("... {} - {}", lhs, rhs);
-                        let out = lhs - rhs;
-                        println!("... {}\n", out);
-                        Cell::Number(out)
-                    }
-                },
-            }
-        } else {
-            Cell::Number(f64::NAN)
-        }
-    }
-}
-
-impl TryFrom<&str> for Formula {
-    type Error = String;
-
-    fn try_from(input: &str) -> Result<Self, Self::Error> {
+    pub fn parse(input: &str) -> Result<Self, String> {
         let ops = vec![
             ("**", ArithmeticOperator::Exponentiation),
             ("*", ArithmeticOperator::Multiplication),
@@ -109,8 +50,8 @@ impl TryFrom<&str> for Formula {
         for op in ops {
             let formula = match input.split(op.0).collect::<Vec<&str>>()[..] {
                 [lhs, rhs] => match (
-                    NumberOrCellPos::try_from(lhs.trim()),
-                    NumberOrCellPos::try_from(rhs.trim()),
+                    NumberOrCellPos::parse(lhs.trim()),
+                    NumberOrCellPos::parse(rhs.trim()),
                 ) {
                     (Ok(left), Ok(right)) => Some(Formula {
                         operator: Operator::ArithmeticOperator(op.1),
@@ -130,6 +71,61 @@ impl TryFrom<&str> for Formula {
         // TODO: propagate the errors of incorrect operands
         Err("Unsupported formula or incorrect operands.".to_string())
     }
+
+    #[allow(dead_code)]
+    pub fn new(operator: Operator, left: NumberOrCellPos, right: NumberOrCellPos) -> Self {
+        Formula {
+            operator,
+            left,
+            right,
+        }
+    }
+
+    pub fn resolve(&self, sheet: &Sheet, resolved: &mut Sheet) {
+        if let (Some(lhs), Some(rhs)) = (self.left.resolve(sheet), self.right.resolve(sheet)) {
+            match &self.operator {
+                Operator::ArithmeticOperator(op) => match op {
+                    ArithmeticOperator::Addition => {
+                        println!("..> ={} + {}", self.left, self.right);
+                        println!("... {} + {}", lhs, rhs);
+                        let out = lhs + rhs;
+                        println!("... {}\n", out);
+                        Cell::Number(out);
+                    }
+                    ArithmeticOperator::Division => {
+                        println!("..> ={} / {}", self.left, self.right);
+                        println!("... {} / {}", lhs, rhs);
+                        let out = lhs / rhs;
+                        println!("... {}\n", out);
+                        Cell::Number(out);
+                    }
+                    ArithmeticOperator::Exponentiation => {
+                        println!("..> ={} ** {}", self.left, self.right);
+                        println!("... {} ** {}", lhs, rhs);
+                        let out = f64::powf(lhs, rhs);
+                        println!("... {}\n", out);
+                        Cell::Number(out);
+                    }
+                    ArithmeticOperator::Multiplication => {
+                        println!("..> ={} * {}", self.left, self.right);
+                        println!("... {} * {}", lhs, rhs);
+                        let out = lhs * rhs;
+                        println!("... {}\n", out);
+                        Cell::Number(out);
+                    }
+                    ArithmeticOperator::Subtraction => {
+                        println!("..> ={} - {}", self.left, self.right);
+                        println!("... {} - {}", lhs, rhs);
+                        let out = lhs - rhs;
+                        println!("... {}\n", out);
+                        Cell::Number(out);
+                    }
+                },
+            }
+        } else {
+            Cell::Number(f64::NAN);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -141,7 +137,7 @@ mod tests {
     #[test]
     fn can_parse_arithmetic() {
         assert_eq!(
-            Formula::try_from("1.23 + 456").unwrap(),
+            Formula::parse("1.23 + 456").unwrap(),
             Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Addition),
                 NumberOrCellPos::Number(1.23),
@@ -150,7 +146,7 @@ mod tests {
         );
 
         assert_eq!(
-            Formula::try_from("A1 + B2").unwrap(),
+            Formula::parse("A1 + B2").unwrap(),
             Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Addition),
                 NumberOrCellPos::CellPos(CellPos::new("A1".to_string(), 1, 1)),
@@ -159,7 +155,7 @@ mod tests {
         );
 
         assert_eq!(
-            Formula::try_from("C3 / 0 ").unwrap(),
+            Formula::parse("C3 / 0 ").unwrap(),
             Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Division),
                 NumberOrCellPos::CellPos(CellPos::new("C3".to_string(), 3, 3)),
@@ -168,7 +164,7 @@ mod tests {
         );
 
         assert_eq!(
-            Formula::try_from("1 / 2").unwrap(),
+            Formula::parse("1 / 2").unwrap(),
             Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Division),
                 NumberOrCellPos::Number(1.0),
@@ -177,7 +173,7 @@ mod tests {
         );
 
         assert_eq!(
-            Formula::try_from("0 ** 5").unwrap(),
+            Formula::parse("0 ** 5").unwrap(),
             Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Exponentiation),
                 NumberOrCellPos::Number(0.0),
@@ -186,7 +182,7 @@ mod tests {
         );
 
         assert_eq!(
-            Formula::try_from("Z20 ** 3").unwrap(),
+            Formula::parse("Z20 ** 3").unwrap(),
             Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Exponentiation),
                 NumberOrCellPos::CellPos(CellPos::new("Z20".to_string(), 20, 26)),
@@ -195,7 +191,7 @@ mod tests {
         );
 
         assert_eq!(
-            Formula::try_from("9.60 * 0.8").unwrap(),
+            Formula::parse("9.60 * 0.8").unwrap(),
             Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Multiplication),
                 NumberOrCellPos::Number(9.60),
@@ -204,7 +200,7 @@ mod tests {
         );
 
         assert_eq!(
-            Formula::try_from("B2 * C2").unwrap(),
+            Formula::parse("B2 * C2").unwrap(),
             Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Multiplication),
                 NumberOrCellPos::CellPos(CellPos::new("B2".to_string(), 2, 2)),
@@ -213,7 +209,7 @@ mod tests {
         );
 
         assert_eq!(
-            Formula::try_from("A1 - 1").unwrap(),
+            Formula::parse("A1 - 1").unwrap(),
             Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Subtraction),
                 NumberOrCellPos::CellPos(CellPos::new("A1".to_string(), 1, 1)),
@@ -222,7 +218,7 @@ mod tests {
         );
 
         assert_eq!(
-            Formula::try_from("0 - 3.141592").unwrap(),
+            Formula::parse("0 - 3.141592").unwrap(),
             Formula::new(
                 Operator::ArithmeticOperator(ArithmeticOperator::Subtraction),
                 NumberOrCellPos::Number(0.0),
@@ -234,15 +230,15 @@ mod tests {
     #[test]
     fn handles_invalid_input() {
         let err = Err("Unsupported formula or incorrect operands.".to_string());
-        assert_eq!(Formula::try_from("=1.23 + 456"), err);
-        assert_eq!(Formula::try_from("=B2 * C2"), err);
-        assert_eq!(Formula::try_from("1.23 ++ 456"), err);
-        assert_eq!(Formula::try_from("+ A1 B2"), err);
-        assert_eq!(Formula::try_from("C3 0 /"), err);
-        assert_eq!(Formula::try_from("? 1 2"), err);
-        assert_eq!(Formula::try_from("0 * 5%"), err);
-        assert_eq!(Formula::try_from("=SUM(D2:D4)"), err);
-        assert_eq!(Formula::try_from("=XYZ123"), err);
-        assert_eq!(Formula::try_from("=nope + 1"), err);
+        assert_eq!(Formula::parse("=1.23 + 456"), err);
+        assert_eq!(Formula::parse("=B2 * C2"), err);
+        assert_eq!(Formula::parse("1.23 ++ 456"), err);
+        assert_eq!(Formula::parse("+ A1 B2"), err);
+        assert_eq!(Formula::parse("C3 0 /"), err);
+        assert_eq!(Formula::parse("? 1 2"), err);
+        assert_eq!(Formula::parse("0 * 5%"), err);
+        assert_eq!(Formula::parse("=SUM(D2:D4)"), err);
+        assert_eq!(Formula::parse("=XYZ123"), err);
+        assert_eq!(Formula::parse("=nope + 1"), err);
     }
 }

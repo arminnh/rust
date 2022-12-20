@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::{cell::Cell, cell_pos::CellPos, sheet::Sheet};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug,  PartialEq)]
 pub enum NumberOrCellPos {
     // TODO: support generic number types -- https://crates.io/crates/num
     Number(f64),
@@ -15,23 +15,19 @@ impl NumberOrCellPos {
     pub fn resolve(&self, sheet: &Sheet) -> Option<f64> {
         match self {
             NumberOrCellPos::Number(n) => Some(*n),
-            NumberOrCellPos::CellPos(pos) => match sheet.content[pos.row - 1][pos.col - 1] {
+            NumberOrCellPos::CellPos(pos) => match sheet.cells[pos.row - 1][pos.col - 1] {
                 Cell::Number(n) => Some(n),
                 _ => None,
             },
         }
     }
-}
 
-impl TryFrom<&str> for NumberOrCellPos {
-    type Error = &'static str;
-
-    fn try_from(input: &str) -> Result<Self, Self::Error> {
+    pub fn parse(input: &str) -> Result<Self, &'static str> {
         if let Ok(number) = input.parse::<f64>() {
             return Ok(NumberOrCellPos::Number(number));
         }
 
-        if let Ok(pos) = CellPos::try_from(input) {
+        if let Ok(pos) = CellPos::parse(input) {
             return Ok(NumberOrCellPos::CellPos(pos));
         }
 
@@ -55,23 +51,23 @@ mod tests {
     #[test]
     fn can_parse_cell_range() {
         assert_eq!(
-            NumberOrCellPos::try_from("1").unwrap(),
+            NumberOrCellPos::parse("1").unwrap(),
             NumberOrCellPos::Number(1.0)
         );
         assert_eq!(
-            NumberOrCellPos::try_from("-1").unwrap(),
+            NumberOrCellPos::parse("-1").unwrap(),
             NumberOrCellPos::Number(-1.0)
         );
         assert_eq!(
-            NumberOrCellPos::try_from("3.141592").unwrap(),
+            NumberOrCellPos::parse("3.141592").unwrap(),
             NumberOrCellPos::Number(3.141592)
         );
         assert_eq!(
-            NumberOrCellPos::try_from("A1").unwrap(),
+            NumberOrCellPos::parse("A1").unwrap(),
             NumberOrCellPos::CellPos(CellPos::new("A1".to_string(), 1, 1))
         );
         assert_eq!(
-            NumberOrCellPos::try_from("ZA99").unwrap(),
+            NumberOrCellPos::parse("ZA99").unwrap(),
             NumberOrCellPos::CellPos(CellPos::new("ZA99".to_string(), 99, 677))
         );
     }
@@ -79,15 +75,15 @@ mod tests {
     #[test]
     fn handles_invalid_input() {
         let err = Err("Invalid Number or Cell position.");
-        assert_eq!(NumberOrCellPos::try_from(""), err);
-        assert_eq!(NumberOrCellPos::try_from("?"), err);
-        assert_eq!(NumberOrCellPos::try_from("=123"), err);
-        assert_eq!(NumberOrCellPos::try_from("Z0"), err);
-        assert_eq!(NumberOrCellPos::try_from("A1:"), err);
-        assert_eq!(NumberOrCellPos::try_from(":A1"), err);
-        assert_eq!(NumberOrCellPos::try_from("1A:A1"), err);
-        assert_eq!(NumberOrCellPos::try_from("=H8 * Z1"), err);
-        assert_eq!(NumberOrCellPos::try_from("=9 - 5.795"), err);
-        assert_eq!(NumberOrCellPos::try_from("#ERROR#"), err);
+        assert_eq!(NumberOrCellPos::parse(""), err);
+        assert_eq!(NumberOrCellPos::parse("?"), err);
+        assert_eq!(NumberOrCellPos::parse("=123"), err);
+        assert_eq!(NumberOrCellPos::parse("Z0"), err);
+        assert_eq!(NumberOrCellPos::parse("A1:"), err);
+        assert_eq!(NumberOrCellPos::parse(":A1"), err);
+        assert_eq!(NumberOrCellPos::parse("1A:A1"), err);
+        assert_eq!(NumberOrCellPos::parse("=H8 * Z1"), err);
+        assert_eq!(NumberOrCellPos::parse("=9 - 5.795"), err);
+        assert_eq!(NumberOrCellPos::parse("#ERROR#"), err);
     }
 }
