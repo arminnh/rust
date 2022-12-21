@@ -45,8 +45,51 @@ fn part_1(mut lines: Lines<BufReader<File>>) -> i64 {
     strength
 }
 
-fn part_2(lines: Lines<BufReader<File>>) {
-    println!("Part 2");
+/// CRT: 40 wide and 6 high. Draws pixels left-to-right from position 0 to position 39, row per row.
+/// The CRT draws a single pixel during each cycle. If the sprite is positioned such that one of its
+/// three pixels is the pixel currently being drawn, the screen produces a lit pixel (#);
+/// otherwise, the screen leaves the pixel dark (.). The X register sets the horizontal position of
+/// the middle of the sprite, which is 3 pixels wide.
+fn part_2(mut lines: Lines<BufReader<File>>) -> String {
+    let mut cycle = 0;
+    let mut x = 1;
+    let mut last_addx_value = 0;
+    let mut out = String::new();
+
+    loop {
+        let pixel_col = cycle % 40;
+        if pixel_col == 0 {
+            out += "\n";
+        }
+        if pixel_col == x - 1 || pixel_col == x || pixel_col == x + 1 {
+            out += "#";
+        } else {
+            out += " ";
+        }
+        cycle += 1;
+
+        if last_addx_value != 0 {
+            x += last_addx_value;
+            last_addx_value = 0;
+            continue;
+        }
+
+        if let Some(line) = lines.next() {
+            match line
+                .unwrap()
+                .split_ascii_whitespace()
+                .collect::<Vec<&str>>()[..]
+            {
+                ["addx", num] => {
+                    last_addx_value = num.parse::<i64>().unwrap();
+                }
+                _ => (),
+            }
+        } else {
+            break;
+        }
+    }
+    out
 }
 
 fn get_lines(path: &str) -> Lines<BufReader<File>> {
@@ -55,7 +98,8 @@ fn get_lines(path: &str) -> Lines<BufReader<File>> {
 
 fn main() {
     part_1(get_lines("inputs/day_10"));
-    // part_2(reader.lines());
+    let part_2 = part_2(get_lines("inputs/day_10"));
+    println!("{}", part_2);
 }
 
 #[cfg(test)]
@@ -73,5 +117,14 @@ mod tests {
     }
 
     #[test]
-    fn test_part_2() {}
+    fn test_part_2() {
+        let expected = "
+##  ##  ##  ##  ##  ##  ##  ##  ##  ##  \n\
+###   ###   ###   ###   ###   ###   ### \n\
+####    ####    ####    ####    ####    \n\
+#####     #####     #####     #####     \n\
+######      ######      ######      ####\n\
+#######       #######       #######     \n ";
+        assert_eq!(part_2(get_lines("inputs/day_10_example_2")), expected)
+    }
 }
