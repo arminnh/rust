@@ -81,50 +81,48 @@ impl Formula {
         }
     }
 
-    pub fn resolve(&self, sheet: &Sheet, resolved: &mut Sheet) {
-        if let (Some(lhs), Some(rhs)) = (self.left.resolve(sheet), self.right.resolve(sheet)) {
-            match &self.operator {
-                Operator::ArithmeticOperator(op) => match op {
-                    ArithmeticOperator::Addition => {
-                        println!("..> ={} + {}", self.left, self.right);
-                        println!("... {} + {}", lhs, rhs);
-                        let out = lhs + rhs;
-                        println!("... {}\n", out);
-                        Cell::Number(out);
-                    }
-                    ArithmeticOperator::Division => {
-                        println!("..> ={} / {}", self.left, self.right);
-                        println!("... {} / {}", lhs, rhs);
-                        let out = lhs / rhs;
-                        println!("... {}\n", out);
-                        Cell::Number(out);
-                    }
-                    ArithmeticOperator::Exponentiation => {
-                        println!("..> ={} ** {}", self.left, self.right);
-                        println!("... {} ** {}", lhs, rhs);
-                        let out = f64::powf(lhs, rhs);
-                        println!("... {}\n", out);
-                        Cell::Number(out);
-                    }
-                    ArithmeticOperator::Multiplication => {
-                        println!("..> ={} * {}", self.left, self.right);
-                        println!("... {} * {}", lhs, rhs);
-                        let out = lhs * rhs;
-                        println!("... {}\n", out);
-                        Cell::Number(out);
-                    }
-                    ArithmeticOperator::Subtraction => {
-                        println!("..> ={} - {}", self.left, self.right);
-                        println!("... {} - {}", lhs, rhs);
-                        let out = lhs - rhs;
-                        println!("... {}\n", out);
-                        Cell::Number(out);
-                    }
-                },
-            }
-        } else {
-            Cell::Number(f64::NAN);
-        }
+    pub fn resolve(&self, row: usize, col: usize, sheet: &mut Sheet) {
+        let new_cell =
+            if let (Some(lhs), Some(rhs)) = (self.left.resolve(sheet), self.right.resolve(sheet)) {
+                self.do_formula(lhs, rhs)
+            } else {
+                Cell::Number(f64::NAN)
+            };
+        sheet.set_resolved(row, col, new_cell)
+    }
+
+    fn do_formula(&self, lhs: f64, rhs: f64) -> Cell {
+        let new_cell = Cell::Number(match &self.operator {
+            Operator::ArithmeticOperator(op) => match op {
+                ArithmeticOperator::Addition => {
+                    println!("..> ={} + {}", self.left, self.right);
+                    println!("... {} + {}", lhs, rhs);
+                    lhs + rhs
+                }
+                ArithmeticOperator::Division => {
+                    println!("..> ={} / {}", self.left, self.right);
+                    println!("... {} / {}", lhs, rhs);
+                    lhs / rhs
+                }
+                ArithmeticOperator::Exponentiation => {
+                    println!("..> ={} ** {}", self.left, self.right);
+                    println!("... {} ** {}", lhs, rhs);
+                    f64::powf(lhs, rhs)
+                }
+                ArithmeticOperator::Multiplication => {
+                    println!("..> ={} * {}", self.left, self.right);
+                    println!("... {} * {}", lhs, rhs);
+                    lhs * rhs
+                }
+                ArithmeticOperator::Subtraction => {
+                    println!("..> ={} - {}", self.left, self.right);
+                    println!("... {} - {}", lhs, rhs);
+                    lhs - rhs
+                }
+            },
+        });
+        println!("... {}\n", new_cell);
+        new_cell
     }
 }
 

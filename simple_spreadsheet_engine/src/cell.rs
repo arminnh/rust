@@ -15,9 +15,9 @@ pub enum Cell {
 impl Cell {
     /// Resolve the Cell so it can be displayed. If expression, resolve the expression, otherwise simply
     /// return the cell because the content can be displayed directly.
-    pub fn resolve(&self, sheet: &Sheet, resolved: &mut Sheet) {
+    pub fn resolve(&self, row: usize, col: usize, sheet: &mut Sheet) {
         match self {
-            Cell::Expression(e) => e.resolve(sheet, resolved),
+            Cell::Expression(e) => e.resolve(row, col, sheet),
             _ => (),
         }
     }

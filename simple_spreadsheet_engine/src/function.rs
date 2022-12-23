@@ -22,37 +22,49 @@ fn std_deviation(data: &Vec<f64>) -> Option<f64> {
 // TODO: all multiple argument support -- probably better through struct of enum FunctionName and vector of args
 // TODO: add all the functions!
 #[derive(Debug, PartialEq, Eq)]
-pub enum Function {
-    Avg(CellRange),
-    Count(CellRange),
-    Max(CellRange),
-    Median(CellRange),
-    Min(CellRange),
-    Stdev(CellRange),
-    Sum(CellRange),
+pub enum FunctionName {
+    Avg,
+    Count,
+    Max,
+    Median,
+    Min,
+    Stdev,
+    Sum,
+}
+
+impl FunctionName {
+    pub fn parse(input: &str) -> Option<FunctionName> {
+        match input {
+            "AVG" => Some(FunctionName::Avg),
+            "COUNT" => Some(FunctionName::Count),
+            "MAX" => Some(FunctionName::Max),
+            "MEDIAN" => Some(FunctionName::Median),
+            "MIN" => Some(FunctionName::Min),
+            "STDEV" => Some(FunctionName::Stdev),
+            "SUM" => Some(FunctionName::Sum),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct Function {
+    name: FunctionName,
+    cell_range: CellRange,
 }
 
 impl Function {
-    fn parse_name(input: &str) -> Option<fn(CellRange) -> Function> {
-        match input {
-            "AVG" => Some(Function::Avg),
-            "COUNT" => Some(Function::Count),
-            "MAX" => Some(Function::Max),
-            "MEDIAN" => Some(Function::Median),
-            "MIN" => Some(Function::Min),
-            "STDEV" => Some(Function::Stdev),
-            "SUM" => Some(Function::Sum),
-            _ => None,
-        }
+    fn new(name: FunctionName, cell_range: CellRange) -> Self {
+        Function { name, cell_range }
     }
 
     pub fn parse(input: &str) -> Result<Self, String> {
         match input.split(|c| c == '(' || c == ')').collect::<Vec<&str>>()[..] {
             [function_name, argument, ""] => match (
-                Function::parse_name(function_name.trim()),
+                FunctionName::parse(function_name.trim()),
                 CellRange::parse(argument.trim()),
             ) {
-                (Some(function), Ok(cell_range)) => Ok(function(cell_range)),
+                (Some(function), Ok(cell_range)) => Ok(Function::new(function, cell_range)),
                 (Some(_), Err(e)) => {
                     Err(format!("Invalid function argument '{}': '{}'", argument, e))
                 }
@@ -62,7 +74,14 @@ impl Function {
         }
     }
 
-    pub fn resolve(&self, sheet: &Sheet, resolved: &mut Sheet) {
+    pub fn resolve(&self, row: usize, col: usize, sheet: &mut Sheet) {
+        let nums: Vec<f64> = self.cell_range.resolve(row, col, sheet);
+        let out = self.do_function(nums);
+        println!("... {}\n", out);
+        sheet.set_resolved(row, col, Cell::Number(out));
+    }
+
+    fn do_function(&self, mut nums: Vec<f64>) -> f64 {
         let nums_to_str = |nums: &Vec<f64>| {
             nums.iter()
                 .map(|f| f.to_string())
@@ -70,63 +89,54 @@ impl Function {
                 .join(", ")
         };
 
-        let out: f64 = match self {
-            Function::Avg(range) => {
-                println!("  > =AVG({})", range.str);
-                let nums: Vec<f64> = range.resolve(sheet);
+        let out: f64 = match self.name {
+            FunctionName::Avg => {
+                println!("  > =AVG({})", self.cell_range.str);
                 println!("... AVG({})", nums_to_str(&nums));
                 nums.iter().sum::<f64>() / nums.len() as f64
             }
-            Function::Count(range) => {
-                println!("  > =COUNT({})", range.str);
-                let nums: Vec<f64> = range.resolve(sheet);
+            FunctionName::Count => {
+                println!("  > =COUNT({})", self.cell_range.str);
                 println!("... COUNT({})", nums_to_str(&nums));
                 nums.len() as f64
             }
-            Function::Max(range) => {
-                println!("  > =MAX({})", range.str);
-                let nums: Vec<f64> = range.resolve(sheet);
+            FunctionName::Max => {
+                println!("  > =MAX({})", self.cell_range.str);
                 println!("... MAX({})", nums_to_str(&nums));
                 match nums.iter().max_by(|a, b| a.total_cmp(b)) {
                     Some(max) => *max,
                     None => f64::NAN,
                 }
             }
-            Function::Median(range) => {
-                println!("  > =MEDIAN({})", range.str);
-                let mut nums: Vec<f64> = range.resolve(sheet);
+            FunctionName::Median => {
+                println!("  > =MEDIAN({})", self.cell_range.str);
                 println!("... MEDIAN({})", nums_to_str(&nums));
                 nums.sort_by(|a, b| a.total_cmp(b));
                 nums[nums.len() / 2]
             }
-            Function::Min(range) => {
-                println!("  > =MIN({})", range.str);
-                let nums: Vec<f64> = range.resolve(sheet);
+            FunctionName::Min => {
+                println!("  > =MIN({})", self.cell_range.str);
                 println!("... MIN({})", nums_to_str(&nums));
                 match nums.iter().min_by(|a, b| a.total_cmp(b)) {
                     Some(min) => *min,
                     None => f64::NAN,
                 }
             }
-            Function::Stdev(range) => {
-                println!("  > =STDEV({})", range.str);
-                let nums: Vec<f64> = range.resolve(sheet);
+            FunctionName::Stdev => {
+                println!("  > =STDEV({})", self.cell_range.str);
                 println!("... STDEV({})", nums_to_str(&nums));
                 match std_deviation(&nums) {
                     Some(stddev) => stddev,
                     None => f64::NAN,
                 }
             }
-            Function::Sum(range) => {
-                println!("  > =SUM({})", range.str);
-                let nums: Vec<f64> = range.resolve(sheet);
+            FunctionName::Sum => {
+                println!("  > =SUM({})", self.cell_range.str);
                 println!("... SUM({})", nums_to_str(&nums));
                 nums.iter().fold(0.0, |acc, n| acc + n)
             }
         };
-
-        println!("... {}\n", out);
-        Cell::Number(out);
+        out
     }
 }
 

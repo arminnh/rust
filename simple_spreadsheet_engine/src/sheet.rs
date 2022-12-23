@@ -1,16 +1,18 @@
-use std::fmt;
+use std::{collections::HashSet, fmt};
 
 use crate::cell::Cell;
 
 #[derive(Debug)]
 pub struct Sheet {
     pub cells: Vec<Vec<Cell>>,
+    resolved: Vec<Vec<Cell>>,
+    resolved_set: HashSet<(usize, usize)>,
 }
 
 impl Sheet {
     /// Creates a Sheet with content (2D array of Cells) from a str.
     pub fn parse_input(input: String) -> Sheet {
-        let rows = input
+        let rows: Vec<Vec<Cell>> = input
             .lines()
             .enumerate()
             .map(|(i, line)| {
@@ -20,23 +22,39 @@ impl Sheet {
                     .collect()
             })
             .collect();
+        let resolved = rows.iter().map(|_| Vec::new()).collect();
 
-        Sheet { cells: rows }
+        Sheet {
+            cells: rows,
+            resolved: resolved,
+            resolved_set: HashSet::new(),
+        }
     }
 
     /// Processes/resolves all computations to prepare for displaying.
-    pub fn resolve(&self) -> Sheet {
-        let mut resolved = Sheet {
-            cells: self.cells.iter().map(|_| Vec::new()).collect(),
-        };
-
-        for row in self.cells.iter() {
-            for col in row.iter() {
-                col.resolve(self, &mut resolved);
+    pub fn resolve(&mut self) {
+        for (i, row) in self.cells.iter().enumerate() {
+            for (j, col) in row.iter().enumerate() {
+                col.resolve(i, j, self);
             }
         }
+    }
 
-        resolved
+    pub fn get_resolved(&self, row: usize, col: usize) -> &Cell {
+        &self.resolved[row][col]
+    }
+
+    pub fn set_resolved(&mut self, row: usize, col: usize, cell: Cell) {
+        self.resolved[row][col] = cell;
+        self.resolved_set.insert((row, col));
+    }
+
+    pub fn is_resolved(&self, row: usize, col: usize) -> bool {
+        self.resolved_set.contains(&(row, col))
+    }
+
+    pub(crate) fn render(&self) -> String {
+        todo!()
     }
 }
 

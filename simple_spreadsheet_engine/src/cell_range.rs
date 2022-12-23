@@ -46,12 +46,14 @@ impl CellRange {
     }
 
     /// Return a vector of numbers in cells that lie in the specified range.
-    /// Only works for cells that contain a number.
-    /// TODO: resolve values through a dependency graph to ensure all references can resolve successfully?
-    pub(crate) fn resolve(&self, sheet: &Sheet) -> Vec<f64> {
+    pub fn resolve(&self, row: usize, col: usize, sheet: &mut Sheet) -> Vec<f64> {
         let mut out = Vec::new();
         for i in self.start_cell.row..=self.end_cell.row {
             for j in self.start_cell.col..=self.end_cell.col {
+                // if !sheet.is_resolved(i - 1, j - 1) {
+                //     sheet.cells[i - 1][j - 1].resolve(row, col, sheet);
+                // }
+
                 if let Cell::Number(n) = sheet.cells[i - 1][j - 1] {
                     out.push(n)
                 }

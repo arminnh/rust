@@ -10,10 +10,10 @@ mod sheet;
 use crate::sheet::Sheet;
 
 pub fn run(input: String) -> String {
-    let sheet = Sheet::parse_input(input);
+    let mut sheet = Sheet::parse_input(input);
     print!("{}\n\n", sheet);
-    let resolved = sheet.resolve();
-    let out = resolved.to_string();
+    sheet.resolve();
+    let out = sheet.render();
     print!("{}\n\n", out);
     out
 }

@@ -11,13 +11,14 @@ pub enum Clone {
 }
 
 impl Clone {
-    fn resolve(&self, row: usize, col: usize, sheet: &Sheet, resolved: &Sheet) {
+    fn resolve(&self, row: usize, col: usize, sheet: &Sheet) {
         let (row, col) = match self {
             Clone::Left => (row, col - 1),
             Clone::Right => (row, col + 1),
             Clone::Top => (row - 1, col),
         };
         let target = &sheet.cells[row][col];
+        todo!()
     }
 }
 
@@ -46,11 +47,11 @@ impl Expression {
         }
     }
 
-    pub fn resolve(&self, sheet: &Sheet, resolved: &mut Sheet) {
+    pub fn resolve(&self, row: usize, col: usize, sheet: &mut Sheet) {
         match self {
-            Expression::Clone(row, col, e) => e.resolve(*row, *col, sheet, resolved),
-            Expression::Function(e) => e.resolve(sheet, resolved),
-            Expression::Formula(e) => e.resolve(sheet, resolved),
+            Expression::Clone(row, col, e) => e.resolve(*row, *col, sheet),
+            Expression::Function(e) => e.resolve(row, col, sheet),
+            Expression::Formula(e) => e.resolve(row, col, sheet),
         }
     }
 }
