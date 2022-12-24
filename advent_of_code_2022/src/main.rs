@@ -1,105 +1,172 @@
+use std::collections::HashMap;
+use std::error::Error;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Lines};
 
-/// Figure out the signal being sent by the CPU. It has a single register, X, which starts
-/// with the value 1. It supports only two instructions:
-/// - addx V takes two cycles to complete. After two cycles, the X register is
-///   increased by the value V. (V can be negative.)
-/// - noop takes one cycle to complete. It has no other effect.
+type Item = i32;
+
+fn parse_items(s: String) -> Vec<Item> {
+    s.split_once(":")
+        .expect("Expected ':' while parsing starting items.")
+        .1
+        .split(",")
+        .map(|i| i.trim().parse().expect("Item is not a valid number."))
+        .collect()
+}
+
+#[derive(Debug)]
+enum Operand {
+    Old,
+    Num(i32),
+}
+
+impl Operand {
+    fn from_str(s: &str) -> Self {
+        if s == "old" {
+            Operand::Old
+        } else {
+            Operand::Num(s.parse().expect("Num operand not a valid number."))
+        }
+    }
+}
+
+#[derive(Debug)]
+enum Operator {
+    Add,
+    Mult,
+}
+
+impl Operator {
+    fn from_str(s: &str) -> Self {
+        if s == "*" {
+            Operator::Mult
+        } else {
+            Operator::Add
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Operation {
+    operator: Operator,
+    left: Operand,
+    right: Operand,
+}
+
+impl Operation {
+    fn from_str(s: String) -> Self {
+        match s
+            .split_once("=")
+            .expect("Expected '=' while parsing operation.")
+            .1
+            .split_ascii_whitespace()
+            .collect::<Vec<&str>>()[..]
+        {
+            [left, op, right] => Operation {
+                operator: Operator::from_str(op),
+                left: Operand::from_str(left),
+                right: Operand::from_str(right),
+            },
+            _ => panic!("Invalid operation."),
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Action {
+    divisible_by: i32,
+    target_if_true: i32,
+    target_if_false: i32,
+}
+
+impl Action {
+    fn from_str(s_test: String, s_true: String, s_false: String) -> Self {
+        let divisible_by = s_test
+            .split_once("divisible by")
+            .expect("Expected 'divisible by' while parsing test.")
+            .1
+            .trim()
+            .parse()
+            .expect("Denominator not a valid number.");
+        let target_if_true = s_true
+            .split_once("monkey")
+            .expect("Expected 'monkey' while parsing test true case.")
+            .1
+            .trim()
+            .parse()
+            .expect("Target monkey not a valid number.");
+        let target_if_false = s_false
+            .split_once("monkey")
+            .expect("Expected 'monkey' while parsing test false case.")
+            .1
+            .trim()
+            .parse()
+            .expect("Target monkey not a valid number.");
+
+        Action {
+            divisible_by,
+            target_if_true,
+            target_if_false,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Monkey {
+    items: Vec<Item>,
+    operation: Operation,
+    action: Action,
+}
+
+impl Monkey {
+    fn from_str(lines: &mut Lines<BufReader<File>>) -> Result<Self, Box<dyn Error>> {
+        Ok(Monkey {
+            items: parse_items(lines.next().unwrap().unwrap()),
+            operation: Operation::from_str(lines.next().unwrap().unwrap()),
+            action: Action::from_str(
+                lines.next().unwrap().unwrap(),
+                lines.next().unwrap().unwrap(),
+                lines.next().unwrap().unwrap(),
+            ),
+        })
+    }
+}
+
 fn part_1(mut lines: Lines<BufReader<File>>) -> i64 {
-    let mut cycle = 0;
-    let mut x = 1;
-    let mut last_addx_value = 0;
-    let mut strength = 0;
+    let mut monkeys: HashMap<i32, Monkey> = HashMap::new();
 
-    loop {
-        cycle += 1;
-
-        if (cycle - 20) % 40 == 0 {
-            strength += cycle * x;
-        }
-
-        if last_addx_value != 0 {
-            x += last_addx_value;
-            last_addx_value = 0;
-            continue;
-        }
-
-        if let Some(line) = lines.next() {
-            match line
-                .unwrap()
-                .split_ascii_whitespace()
-                .collect::<Vec<&str>>()[..]
-            {
-                ["addx", num] => {
-                    last_addx_value = num.parse::<i64>().unwrap();
-                }
-                _ => (),
-            }
+    while let Some(Ok(monkey_line)) = lines.next() {
+        let i: u32 = monkey_line.chars().nth(7).unwrap().to_digit(10).unwrap();
+        if let Ok(monkey) = Monkey::from_str(&mut lines) {
+            monkeys.insert(i.try_into().unwrap(), monkey);
         } else {
-            break;
+            print!("COULD NOT LOAD MONKEY {}.", i);
         }
+        lines.next();
     }
 
-    println!("\n-- END: Cycle '{}', x '{}' -> {}\n", cycle, x, strength);
-    strength
+    println!("{:#?}", monkeys);
+    0
 }
 
-/// CRT: 40 wide and 6 high. Draws pixels left-to-right from position 0 to position 39, row per row.
-/// The CRT draws a single pixel during each cycle. If the sprite is positioned such that one of its
-/// three pixels is the pixel currently being drawn, the screen produces a lit pixel (#);
-/// otherwise, the screen leaves the pixel dark (.). The X register sets the horizontal position of
-/// the middle of the sprite, which is 3 pixels wide.
-fn part_2(mut lines: Lines<BufReader<File>>) -> String {
-    let mut cycle = 0;
-    let mut x = 1;
-    let mut last_addx_value = 0;
-    let mut out = String::new();
-
-    loop {
-        let pixel_col = cycle % 40;
-        if pixel_col == 0 {
-            out += "\n";
-        }
-        if pixel_col == x - 1 || pixel_col == x || pixel_col == x + 1 {
-            out += "#";
-        } else {
-            out += " ";
-        }
-        cycle += 1;
-
-        if last_addx_value != 0 {
-            x += last_addx_value;
-            last_addx_value = 0;
-            continue;
-        }
-
-        if let Some(line) = lines.next() {
-            match line
-                .unwrap()
-                .split_ascii_whitespace()
-                .collect::<Vec<&str>>()[..]
-            {
-                ["addx", num] => {
-                    last_addx_value = num.parse::<i64>().unwrap();
-                }
-                _ => (),
-            }
-        } else {
-            break;
-        }
-    }
-    out
-}
+// fn part_2(mut lines: Lines<BufReader<File>>) {
+// }
 
 fn get_lines(path: &str) -> Lines<BufReader<File>> {
     BufReader::new(File::open(path).expect("Could not open file.")).lines()
 }
 
+// fn next_line(lines: &mut Lines<BufReader<File>>, desc: &str) -> String {
+//     lines
+//         .next()
+//         .expect(&format!("{}{}", "End of file while reading ", desc)[..])
+//         .expect(&format!("{}{}", "Error while reading starting items", desc)[..])
+// }
+
 fn main() {
-    part_1(get_lines("inputs/day_10"));
-    let part_2 = part_2(get_lines("inputs/day_10"));
-    println!("{}", part_2);
+    part_1(get_lines("inputs/day_11_example"));
+    // let part_2 = part_2(get_lines("inputs/day_11_example"));
+    // println!("{}", part_2);
 }
 
 #[cfg(test)]
@@ -107,24 +174,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_part_1_example_1() {
-        assert_eq!(part_1(get_lines("inputs/day_10_example_1")), 0)
+    fn test_part_1_example() {
+        assert_eq!(part_1(get_lines("inputs/day_11_example")), 0)
     }
 
-    #[test]
-    fn test_part_1_example_2() {
-        assert_eq!(part_1(get_lines("inputs/day_10_example_2")), 13140)
-    }
+    // #[test]
+    // fn test_part_1() {
+    //     assert_eq!(part_1(get_lines("inputs/day_11")), 0)
+    // }
 
-    #[test]
-    fn test_part_2() {
-        let expected = "
-##  ##  ##  ##  ##  ##  ##  ##  ##  ##  \n\
-###   ###   ###   ###   ###   ###   ### \n\
-####    ####    ####    ####    ####    \n\
-#####     #####     #####     #####     \n\
-######      ######      ######      ####\n\
-#######       #######       #######     \n ";
-        assert_eq!(part_2(get_lines("inputs/day_10_example_2")), expected)
-    }
+    // #[test]
+    // fn test_part_2() {
+    //     assert_eq!(part_2(get_lines("inputs/day_11")), 0)
+    // }
 }
