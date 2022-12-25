@@ -1,17 +1,17 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::error::Error;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Lines};
 
 type Item = i32;
 
-fn parse_items(s: String) -> Vec<Item> {
-    s.split_once(":")
-        .expect("Expected ':' while parsing starting items.")
+fn parse_items(s: String) -> Result<VecDeque<Item>, Box<dyn Error>> {
+    Ok(s.split_once(":")
+        .ok_or("Could not split on ':'")?
         .1
         .split(",")
         .map(|i| i.trim().parse().expect("Item is not a valid number."))
-        .collect()
+        .collect())
 }
 
 #[derive(Debug)]
@@ -21,11 +21,11 @@ enum Operand {
 }
 
 impl Operand {
-    fn from_str(s: &str) -> Self {
+    fn from_str(s: &str) -> Result<Self, Box<dyn Error>> {
         if s == "old" {
-            Operand::Old
+            Ok(Operand::Old)
         } else {
-            Operand::Num(s.parse().expect("Num operand not a valid number."))
+            Ok(Operand::Num(s.parse()?))
         }
     }
 }
@@ -54,66 +54,60 @@ struct Operation {
 }
 
 impl Operation {
-    fn from_str(s: String) -> Self {
-        match s
+    fn from_str(s: String) -> Result<Self, Box<dyn Error>> {
+        if let [left, op, right] = s
             .split_once("=")
-            .expect("Expected '=' while parsing operation.")
+            .ok_or("Could not split on '='")?
             .1
             .split_ascii_whitespace()
             .collect::<Vec<&str>>()[..]
         {
-            [left, op, right] => Operation {
+            Ok(Operation {
                 operator: Operator::from_str(op),
-                left: Operand::from_str(left),
-                right: Operand::from_str(right),
-            },
-            _ => panic!("Invalid operation."),
+                left: Operand::from_str(left)?,
+                right: Operand::from_str(right)?,
+            })
+        } else {
+            Err("Invalid operation.".into())
         }
     }
 }
 
 #[derive(Debug)]
 struct Action {
-    divisible_by: i32,
+    denominator: i32,
     target_if_true: i32,
     target_if_false: i32,
 }
 
 impl Action {
-    fn from_str(s_test: String, s_true: String, s_false: String) -> Self {
-        let divisible_by = s_test
-            .split_once("divisible by")
-            .expect("Expected 'divisible by' while parsing test.")
-            .1
-            .trim()
-            .parse()
-            .expect("Denominator not a valid number.");
-        let target_if_true = s_true
-            .split_once("monkey")
-            .expect("Expected 'monkey' while parsing test true case.")
-            .1
-            .trim()
-            .parse()
-            .expect("Target monkey not a valid number.");
-        let target_if_false = s_false
-            .split_once("monkey")
-            .expect("Expected 'monkey' while parsing test false case.")
-            .1
-            .trim()
-            .parse()
-            .expect("Target monkey not a valid number.");
-
-        Action {
-            divisible_by,
-            target_if_true,
-            target_if_false,
-        }
+    fn from_str(s_test: String, s_true: String, s_false: String) -> Result<Self, Box<dyn Error>> {
+        Ok(Action {
+            denominator: s_test
+                .split_once("divisible by")
+                .ok_or("Could not split on 'divisible by'")?
+                .1
+                .trim()
+                .parse()?,
+            target_if_true: s_true
+                .split_once("monkey")
+                .ok_or("Could not split on 'monkey'")?
+                .1
+                .trim()
+                .parse()?,
+            target_if_false: s_false
+                .split_once("monkey")
+                .ok_or("Could not split on 'monkey'")?
+                .1
+                .trim()
+                .parse()?,
+        })
     }
 }
 
 #[derive(Debug)]
 struct Monkey {
-    items: Vec<Item>,
+    items: VecDeque<Item>,
     operation: Operation,
     action: Action,
 }
@@ -121,13 +115,13 @@ struct Monkey {
 impl Monkey {
     fn from_str(lines: &mut Lines<BufReader<File>>) -> Result<Self, Box<dyn Error>> {
         Ok(Monkey {
-            items: parse_items(lines.next().unwrap().unwrap()),
-            operation: Operation::from_str(lines.next().unwrap().unwrap()),
+            items: parse_items(lines.next().ok_or("EOL while reading items")??)?,
+            operation: Operation::from_str(lines.next().ok_or("EOL while reading operation")??)?,
             action: Action::from_str(
-                lines.next().unwrap().unwrap(),
-                lines.next().unwrap().unwrap(),
-                lines.next().unwrap().unwrap(),
-            ),
+                lines.next().ok_or("EOL while reading test")??,
+                lines.next().ok_or("EOL while reading test true case")??,
+                lines.next().ok_or("EOL while reading test false case")??,
+            )?,
         })
     }
 }
