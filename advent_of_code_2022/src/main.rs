@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::error::Error;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Lines};
@@ -143,8 +143,10 @@ struct Monkey {
     items: VecDeque<Item>,
     operation: Operation,
     action: Action,
-    inspections: i32,
+    inspections: usize,
 }
+
+struct Monkeys(HashMap<i32, RefCell<Monkey>>);
 
 impl Monkey {
     fn from_str(lines: &mut Lines<BufReader<File>>) -> Result<Self, Box<dyn Error>> {
@@ -167,11 +169,6 @@ impl Monkey {
         // print!("    Worry level increases from {}", i);
         i = self.operation.execute(i);
         // println!(" to {}.", i);
-        i = i / 3;
-        // println!(
-        //     "    Monkey gets bored with item. Worry level is divided by 3 to {}.",
-        //     i
-        // );
         Some(i)
     }
 
@@ -179,82 +176,119 @@ impl Monkey {
         self.items.push_back(item);
     }
 
-    fn throw_items(&mut self, monkeys: &HashMap<i32, RefCell<Monkey>>) {
+    fn throw_items(&mut self, monkeys: &Monkeys, mod_n: Option<usize>) {
         while let Some(item) = self.pop_item() {
-            let target: &i32 = self.action.get_target(item);
+            let item = match mod_n {
+                Some(mod_n) => item % mod_n,
+                None => item / 3,
+            };
+            // println!(
+            //     "    Monkey gets bored with item. Worry level reduced to {}.",
+            //     item
+            // );
 
+            let target: &i32 = self.action.get_target(item);
             // println!(
             //     "    Item with worry level {} is thrown to monkey {}.",
             //     item, target
             // );
-            monkeys.get(target).unwrap().borrow_mut().push_item(item);
+            monkeys.0.get(target).unwrap().borrow_mut().push_item(item);
         }
     }
 }
 
-fn part_1(mut lines: Lines<BufReader<File>>) -> i32 {
-    let mut monkeys: HashMap<i32, RefCell<Monkey>> = HashMap::new();
+impl Monkeys {
+    fn from_str(mut lines: Lines<BufReader<File>>) -> Monkeys {
+        let mut out = HashMap::new();
 
-    while let Some(Ok(monkey_line)) = lines.next() {
-        let i: u32 = monkey_line.chars().nth(7).unwrap().to_digit(10).unwrap();
-        if let Ok(monkey) = Monkey::from_str(&mut lines) {
-            monkeys.insert(i.try_into().unwrap(), RefCell::new(monkey));
-        } else {
-            print!("COULD NOT LOAD MONKEY {}.", i);
+        while let Some(Ok(monkey_line)) = lines.next() {
+            let i: u32 = monkey_line.chars().nth(7).unwrap().to_digit(10).unwrap();
+            if let Ok(monkey) = Monkey::from_str(&mut lines) {
+                out.insert(i.try_into().unwrap(), RefCell::new(monkey));
+            } else {
+                print!("COULD NOT LOAD MONKEY {}.", i);
+            }
+            lines.next();
         }
-        lines.next();
+
+        Monkeys(out)
     }
 
-    (1..=20).for_each(|round| {
-        (0..monkeys.len()).for_each(|i| {
-            // println!("Monkey {}:", i);
-            if let Some(monkey) = monkeys.get(&i32::try_from(i).unwrap()) {
-                monkey.borrow_mut().throw_items(&monkeys);
-            }
-        });
-
+    fn print(&self, round: i32) {
         println!(
             "\nAfter round {}, the monkeys are holding items with these worry levels:",
             round
         );
-        (0..monkeys.len()).for_each(|i| {
-            if let Some(monkey) = monkeys.get(&i32::try_from(i).unwrap()) {
-                println!("Monkey {:?}", monkey.borrow().items);
+        (0..self.0.len()).for_each(|i| {
+            if let Some(monkey) = self.0.get(&i32::try_from(i).unwrap()) {
+                println!(
+                    "Monkey {i} inspected {} times. Items: {:?}",
+                    monkey.borrow().inspections,
+                    monkey.borrow().items,
+                );
             }
         });
-    });
+    }
 
-    let mut inspections: Vec<i32> = monkeys
-        .values()
-        .into_iter()
-        .map(|v| v.borrow().inspections)
-        .collect();
-    inspections.sort();
-    println!("\n\n{inspections:?}");
-    let out = inspections[inspections.len() - 2] * inspections[inspections.len() - 1];
+    fn do_rounds(&self, rounds: i32, lowest_common_multiple: Option<usize>) {
+        (1..=rounds).for_each(|round| {
+            (0..self.0.len()).for_each(|i| {
+                if let Some(monkey) = self.0.get(&i32::try_from(i).unwrap()) {
+                    monkey
+                        .borrow_mut()
+                        .throw_items(&self, lowest_common_multiple);
+                }
+            });
+            // self.print(round)
+        });
+    }
 
-    println!("Result: {out}");
-    out
+    fn calc_monkey_business(&self) -> usize {
+        let mut inspections: Vec<usize> = self
+            .0
+            .values()
+            .into_iter()
+            .map(|v| v.borrow().inspections)
+            .collect();
+        inspections.sort();
+        println!("\n\n{inspections:?}");
+        let out = inspections[inspections.len() - 2] * inspections[inspections.len() - 1];
+
+        println!("Result: {out}");
+        out
+    }
 }
 
-// fn part_2(mut lines: Lines<BufReader<File>>) {
-// }
+fn part_1(lines: Lines<BufReader<File>>) -> usize {
+    let monkeys: Monkeys = Monkeys::from_str(lines);
+    monkeys.do_rounds(20, None);
+    monkeys.calc_monkey_business()
+}
+
+fn part_2(lines: Lines<BufReader<File>>) -> usize {
+    let monkeys: Monkeys = Monkeys::from_str(lines);
+    let lowest_common_multiple = Some(
+        monkeys
+            .0
+            .values()
+            .into_iter()
+            .map(|m| m.borrow().action.denominator)
+            .collect::<HashSet<_>>()
+            .iter()
+            .fold(1, |acc, i| acc * i),
+    );
+    println!("lowest_common_multiple: {lowest_common_multiple:?}");
+    monkeys.do_rounds(10_000, lowest_common_multiple);
+    monkeys.calc_monkey_business()
+}
 
 fn get_lines(path: &str) -> Lines<BufReader<File>> {
     BufReader::new(File::open(path).expect("Could not open file.")).lines()
 }
 
-// fn next_line(lines: &mut Lines<BufReader<File>>, desc: &str) -> String {
-//     lines
-//         .next()
-//         .expect(&format!("{}{}", "End of file while reading ", desc)[..])
-//         .expect(&format!("{}{}", "Error while reading starting items", desc)[..])
-// }
-
 fn main() {
-    part_1(get_lines("inputs/day_11"));
-    // let part_2 = part_2(get_lines("inputs/day_11_example"));
-    // println!("{}", part_2);
+    // part_1(get_lines("inputs/day_11"));
+    part_2(get_lines("inputs/day_11"));
 }
 
 #[cfg(test)]
@@ -263,16 +297,21 @@ mod tests {
 
     #[test]
     fn test_part_1_example() {
-        assert_eq!(part_1(get_lines("inputs/day_11_example")), 10605)
+        assert_eq!(part_1(get_lines("inputs/day_11_example")), 10_605)
     }
 
     #[test]
     fn test_part_1() {
-        assert_eq!(part_1(get_lines("inputs/day_11")), 100345)
+        assert_eq!(part_1(get_lines("inputs/day_11")), 100_345)
     }
 
-    // #[test]
-    // fn test_part_2() {
-    //     assert_eq!(part_2(get_lines("inputs/day_11")), 0)
-    // }
+    #[test]
+    fn test_part_2_example() {
+        assert_eq!(part_2(get_lines("inputs/day_11_example")), 2_713_310_158)
+    }
+
+    #[test]
+    fn test_part_2() {
+        assert_eq!(part_2(get_lines("inputs/day_11")), 28_537_348_205)
+    }
 }
